@@ -168,9 +168,19 @@ table.miolo .comprovante th{width:48mm;background:#f2f4f5;font-weight:700}
 .barra.dupla i.pont{opacity:.55;background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.75) 0 3px,transparent 3px 6px)!important}
 .g-ops{width:100%;height:auto;display:block}
 .g-l{stroke:var(--linha);stroke-width:1}.g-e{font:10px var(--texto);fill:var(--suave)}.g-v{font:700 11px var(--texto);fill:var(--cinza)}
-.g-leg{display:flex;flex-wrap:wrap;gap:6px 18px;margin:8px 0 4px;font-size:12.5px}
+.g-leg{display:flex;flex-wrap:wrap;gap:4px 8px;margin:8px 0 4px;font-size:12.5px}
 .feed{margin-top:12px}
 .elo{border:0;background:none;padding:0;color:var(--vermelho);font-weight:700;cursor:pointer;text-decoration:underline;text-underline-offset:2px}
+.clic{cursor:pointer}
+.g-ops text{pointer-events:none}
+.ind.clic:hover,.ind.clic:focus-visible{background:#f3f9fc}
+.funil-linha.clic:hover span,.vbar.clic:hover .vbar-r span:first-child,.legenda tr.clic:hover td:first-child{text-decoration:underline}
+.rosca circle.clic:hover,.g-ops rect.clic:hover{filter:brightness(1.12)}
+.g-ops .g-dia:hover,.g-ops .g-dia:focus-visible{fill:rgba(0,174,239,.10)}
+.g-cls{border:1px solid transparent;background:none;padding:3px 8px;cursor:pointer;font-size:12.5px}
+.g-cls:hover:not(:disabled){border-color:var(--linha)}.g-cls.ativo{border-color:var(--ciano);background:#e4f5fd}.g-cls:disabled{opacity:.5;cursor:default}
+.chip{display:flex;gap:10px;align-items:center;flex-wrap:wrap;border-left:4px solid var(--ciano);background:#f0fafe;padding:8px 12px;margin:8px 0 12px}
+.fila{margin-top:12px;border:1px solid var(--linha);padding:10px 14px}.fila summary{cursor:pointer;font-weight:700;color:var(--cinza)}.fila table{margin-top:8px}.fila td{padding:6px 8px;font-size:13px}
 .ctrl{display:flex;gap:9px;align-items:flex-start}
 .ico{border:1px solid var(--linha);background:#fff;color:var(--cinza);width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;flex:none}
 .ico:hover{border-color:var(--ciano);color:#056a90}
@@ -557,9 +567,22 @@ function porSituacao(props){
 const CFG = { SUPABASE_URL:'https://yeujqjtjqtegsnzwwazb.supabase.co', SUPABASE_ANON_KEY:'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlldWpxanRqcXRlZ3Nuend3YXpiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1NDE0OTksImV4cCI6MjEwMTExNzQ5OX0.5p1_wJ_aApJpRrN6tFu8qmAytK5FMXWt1soCubpzqao' };
 const SUPABASE_JS = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js';
 
-const APP_VERSION = '1.5.0';
+const APP_VERSION = '1.6.1';
+const LOGO_EMAIL = 'https://arteconartescontabeis-design.github.io/propostas/logo_artecon.png';
 const PORTAL_URL = 'https://arteconartescontabeis-design.github.io/portal/';
 const CHANGELOG = [
+  { v:'1.6.1', data:'21/09/2026', itens:[
+    'Visão geral clicável: cada indicador do topo, cada fatia da rosca, cada barra de valor e cada linha do funil abre a lista de propostas já filtrada por aquela informação (com a etiqueta do filtro e o botão para limpar).',
+    'Gráfico de operações: clicar numa coluna mostra só as operações daquele dia; clicar num item da legenda mostra só aquele tipo; os dois filtros se combinam. A lista abaixo do gráfico acompanha o filtro.',
+    'Tudo funciona também pelo teclado (Tab e Enter).'
+  ]},
+  { v:'1.6.0', data:'21/09/2026', itens:[
+    'Via assinada automática: depois da ÚLTIMA assinatura, seja do cliente ou do escritório, o sistema envia sozinho a via só de leitura a cada signatário, sem precisar de ninguém logado (fila de e-mails no banco + função prop-email, com novas tentativas a cada 5 minutos).',
+    'Notificações de recebimento: o escritório recebe e-mail quando o cliente abre o link pela primeira vez, quando alguém assina e quando todos assinam; o cliente recebe o recibo da própria assinatura, com o código de verificação.',
+    'Painel: novo alerta para link enviado há mais de 2 dias e ainda não aberto (possível e-mail errado ou caixa de spam), e situação da fila na tela da proposta, com o botão “Processar a fila agora”.',
+    'E-mails no padrão Artecon: logo, faixa de título centralizada, bloco de dados da proposta, botão e rodapé com os contatos — o mesmo desenho nos envios feitos pelo app e nos automáticos.',
+    'Escritório: campo “E-mail que recebe os avisos”. Em branco, o aviso vai para quem enviou o link.'
+  ]},
   { v:'1.5.0', data:'21/09/2026', itens:[
     'Visão geral virou painel com gráficos: propostas por situação (quantidade e participação), valor mensal e pontual em cada situação e as operações dos últimos 15 dias, dia a dia (criadas, enviadas, assinaturas, aprovadas, perdidas, alterações, envios e acessos).',
     'Abaixo do gráfico, a lista das operações dos últimos 15 dias, da mais recente para a mais antiga, com o número da proposta, o cliente, quem fez e a hora; clicar abre a proposta.',
@@ -689,7 +712,7 @@ const Local = {
   async historico(id){ return this.db.historico.filter(h => h.proposta_id===id).sort((a,b) => a.criado_em < b.criado_em ? -1 : 1); },
   async salvarEscritorio(e){ this.db.tenant.escritorio = e; this.grava(); },
   async linhaDoTempo(id){ return (await this.historico(id)).map(h => ({ quando:h.criado_em, tipo:h.de ? 'status' : 'criada', quem:h.usuario_email, detalhe:{ de:h.de, para:h.para } })); },
-  async signatarios(){ return []; }, async linksDe(){ return []; }, async assinaturas(){ return []; },
+  async signatarios(){ return []; }, async linksDe(){ return []; }, async assinaturas(){ return []; }, async filaDe(){ return null; }, async naoAbertos(){ return []; },
   async atividades(dias){ const desde = new Date(Date.now() - dias*864e5).toISOString(), px = Object.fromEntries(this.db.propostas.map(p => [p.id, p]));
     return { completo:true, lista:this.db.historico.filter(h => h.criado_em >= desde && px[h.proposta_id]).map(h => { const p = px[h.proposta_id]; return { quando:h.criado_em, tipo:h.de ? 'status' : 'criada', quem:h.usuario_email, detalhe:{ de:h.de, para:h.para }, proposta_id:p.id, numero:p.numero, ano:p.ano, cliente_nome:p.cliente_nome }; }).sort((a,b) => a.quando < b.quando ? 1 : -1) }; },
   async sair(){}
@@ -739,6 +762,13 @@ const Nuvem = {
     if(!error) return { completo:true, lista:data || [] };
     const desde = new Date(Date.now() - dias*864e5).toISOString();            // banco ainda sem a migração 08: usa as datas das próprias propostas
     return { completo:false, lista:eventosDasPropostas(S.propostas).filter(e => e.quando >= desde) }; },
+  // fila de e-mails automáticos (migração 09). null = banco ainda sem a fila: o app continua enviando a via ele mesmo.
+  async filaDe(id){ const { data, error } = await this.sb.from('prop_fila_email').select('tipo,destinatario,criado_em,enviado_em,cancelado_em,tentativas,ultimo_erro,proxima_tentativa_em').eq('proposta_id', id).order('criado_em'); return error ? null : data; },
+  async filaDisparar(){ const { data, error } = await this.sb.rpc('prop_fila_disparar'); if(error) throw this.erro(error); return data; },
+  async naoAbertos(){ const lim = new Date(Date.now() - 2*864e5).toISOString();
+    const { data, error } = await this.sb.from('prop_links').select('proposta_id,signatario_id,canal,enviado_para,criado_em').eq('tipo','assinatura').is('revogado_em', null).is('primeiro_acesso_em', null).lt('criado_em', lim).gt('expira_em', new Date().toISOString()); if(error) return [];
+    if(!data.length) return []; const { data:sg } = await this.sb.from('prop_signatarios').select('id,nome').in('id', data.map(x => x.signatario_id).filter(Boolean)); const nm = Object.fromEntries((sg||[]).map(s => [s.id, s.nome]));
+    return data.map(x => ({ ...x, nome:nm[x.signatario_id] || 'cliente' })); },
   async signatarios(id){ const { data, error } = await this.sb.from('prop_signatarios').select('*').eq('proposta_id', id).is('excluido_em', null).order('ordem').order('criado_em'); if(error) throw this.erro(error); return data; },
   async salvarSignatario(id, row){ const q = id ? this.sb.from('prop_signatarios').update(row).eq('id', id) : this.sb.from('prop_signatarios').insert({ ...row, tenant_id:S.tenant.id }); const { error } = await q.select().single(); if(error) throw this.erro(error); },
   async linksDe(id){ const { data, error } = await this.sb.from('prop_links').select('id,signatario_id,tipo,canal,enviado_para,criado_em,enviado_em,expira_em,acessos,primeiro_acesso_em,ultimo_acesso_em').eq('proposta_id', id).is('revogado_em', null); if(error) throw this.erro(error); return data; },
@@ -802,10 +832,10 @@ const VIEWS = {
       + k.vencendo.map(p => `<div class="aviso ambar"><span>Proposta ${esc(numeroFmt(p))} de <b>${esc(p.cliente_nome)}</b> vence em ${dataBR(p.validade)}.</span><button class="btn mini" data-act="doc" data-id="${p.id}">Abrir</button></div>`).join('');
     $('conteudo').innerHTML = topo('Visão geral','Desempenho comercial das propostas de honorários.','<button class="btn primario" data-act="nova">Nova proposta</button>') + `
     <div class="indicadores">
-      <div class="ind"><div class="rot">Propostas em ${mes}</div><div class="val">${k.noMes}</div><div class="sub">${k.total} no total</div></div>
-      <div class="ind"><div class="rot">Em aberto</div><div class="val">${k.abertas}</div><div class="sub">${brl(k.abertasMensal)}/mês${k.abertasPontual ? ' + ' + brl(k.abertasPontual) + ' pontual' : ''}</div></div>
-      <div class="ind"><div class="rot">Taxa de aprovação</div><div class="val">${k.taxa===null ? '—' : k.taxa + '%'}</div><div class="sub">${k.decididas ? 'sobre ' + k.decididas + ' decidida' + (k.decididas>1?'s':'') + ' (aprovadas + perdidas)' : 'nenhuma proposta decidida ainda'}</div></div>
-      <div class="ind"><div class="rot">Honorários aprovados</div><div class="val">${brl(k.aprovMensal)}</div><div class="sub">por mês${k.aprovPontual ? ' + ' + brl(k.aprovPontual) + ' pontual' : ''}</div></div>
+      <div class="ind clic" role="button" tabindex="0" data-act="filtroRapido" data-f="mes" title="Ver estas propostas"><div class="rot">Propostas em ${mes}</div><div class="val">${k.noMes}</div><div class="sub">${k.total} no total</div></div>
+      <div class="ind clic" role="button" tabindex="0" data-act="filtroRapido" data-f="abertas" title="Ver estas propostas"><div class="rot">Em aberto</div><div class="val">${k.abertas}</div><div class="sub">${brl(k.abertasMensal)}/mês${k.abertasPontual ? ' + ' + brl(k.abertasPontual) + ' pontual' : ''}</div></div>
+      <div class="ind clic" role="button" tabindex="0" data-act="filtroRapido" data-f="decididas" title="Ver estas propostas"><div class="rot">Taxa de aprovação</div><div class="val">${k.taxa===null ? '—' : k.taxa + '%'}</div><div class="sub">${k.decididas ? 'sobre ' + k.decididas + ' decidida' + (k.decididas>1?'s':'') + ' (aprovadas + perdidas)' : 'nenhuma proposta decidida ainda'}</div></div>
+      <div class="ind clic" role="button" tabindex="0" data-act="filtroRapido" data-f="aprovadas" title="Ver estas propostas"><div class="rot">Honorários aprovados</div><div class="val">${brl(k.aprovMensal)}</div><div class="sub">por mês${k.aprovPontual ? ' + ' + brl(k.aprovPontual) + ' pontual' : ''}</div></div>
     </div>
     ${(() => { const at = ativos(S.propostas), abre = p => `<button class="btn mini" data-act="doc" data-id="${p.id}">Abrir</button>`;
       const a1 = at.filter(p => !p.assinada_em && p.clientes_assinaram_em && !p.escritorio_assinou_em && (p.status==='enviada'||p.status==='negociacao')).map(p => `<div class="aviso"><span>Proposta ${esc(numeroFmt(p))} de <b>${esc(p.cliente_nome)}</b>: os clientes já assinaram (${esc(dataHora(p.clientes_assinaram_em))}). <b>Falta a assinatura do escritório.</b></span>${abre(p)}</div>`);
@@ -816,9 +846,9 @@ const VIEWS = {
     <div class="painel"><h2>Operações dos últimos 15 dias</h2><div id="ops15"><p class="dica">Carregando…</p></div></div>
     <div class="duas">
       <div class="painel"><h2>Propostas recentes</h2>${tabelaPropostas(propostasOrdenadas().slice(0,6), true)}</div>
-      <div class="painel"><h2>Funil comercial</h2>${k.funil.map(([s,n]) => `<div class="funil-linha"><span>${esc(STATUS[s])}</span><b>${n}</b></div><div class="barra"><i style="width:${n ? Math.max(3, n/max*100) : 0}%"></i></div>`).join('')}</div>
+      <div class="painel"><h2>Funil comercial</h2>${k.funil.map(([s,n]) => `<div class="funil-linha clic" role="button" tabindex="0" data-act="filtrar" data-status="${s}" title="Ver as propostas em ${esc(STATUS[s])}"><span>${esc(STATUS[s])}</span><b>${n}</b></div><div class="barra"><i style="width:${n ? Math.max(3, n/max*100) : 0}%"></i></div>`).join('')}</div>
     </div>`;
-    carregaOps15();
+    carregaOps15(); carregaNaoAbertos();
   },
 
   propostas(){
@@ -898,9 +928,9 @@ const VIEWS = {
       <div class="painel"><h2>Histórico</h2><ul class="linha-tempo" id="hist"><li>Carregando…</li></ul></div>`) +
       `<div class="doc-area" id="docArea">${docHTML(p)}</div>`;
     if(!previa) tenta(async () => {
-      const [lt, sigs, links, ass] = await Promise.all([DB.linhaDoTempo(p.id), DB.signatarios(p.id), DB.linksDe(p.id), DB.assinaturas(p.id)]);
+      const [lt, sigs, links, ass, fila] = await Promise.all([DB.linhaDoTempo(p.id), DB.signatarios(p.id), DB.linksDe(p.id), DB.assinaturas(p.id), DB.filaDe(p.id)]);
       if(S.view!=='documento' || S.docId!==p.id) return;
-      S.doc = { sigs, links, ass };
+      S.doc = { sigs, links, ass, fila }; S.filaAtiva = fila !== null;
       $('hist').innerHTML = lt.map(linhaTempoHTML).join('') || '<li>Sem registros.</li>';
       desenhaAssinaturas(p);
       if(ass.length) $('docArea').innerHTML = docHTML(p, ass, { fotos:true });
@@ -917,8 +947,8 @@ const VIEWS = {
     <div class="painel"><h2>Padrões das novas propostas</h2><div class="grade">
       ${campo('dia_vencimento','Dia de vencimento','c1','number')}${campo('validade_dias','Validade (dias)','c1','number')}${campo('indice','Índice de reajuste')}${campo('valor_funcionario','Valor por funcionário (R$)','c1')}
     </div><div class="barra-salvar" style="margin-top:16px"><button class="btn primario" data-act="salvarEscritorio" ${d}>Salvar dados do escritório</button></div></div>
-    <div class="painel"><h2>Privacidade (aviso mostrado ao cliente na página de assinatura)</h2><div class="grade">
-      ${campo('email_privacidade','E-mail para assuntos de privacidade','c4','email')}${campo('prazo_guarda','Prazo de guarda informado ao cliente','c4')}
+    <div class="painel"><h2>Avisos ao escritório e privacidade</h2><div class="grade">
+      ${campo('email_avisos','E-mail que recebe os avisos (cliente abriu, assinou, todos assinaram)','c4','email')}${campo('email_privacidade','E-mail para assuntos de privacidade','c4','email')}${campo('prazo_guarda','Prazo de guarda informado ao cliente','c4')}
     </div><p class="dica" style="margin:10px 0 0">Em branco, o aviso usa o telefone do escritório como contato e o texto “pelo prazo da relação contratual e pelos prazos legais de prescrição”.</p>
     <div class="barra-salvar" style="margin-top:12px"><button class="btn primario" data-act="salvarEscritorio" ${d}>Salvar</button></div></div>
     <div class="painel"><h2>Cópia de segurança</h2><p>Baixa um arquivo JSON com clientes, serviços e propostas deste escritório.</p><button class="btn" data-act="backup">Exportar backup</button></div>`;
@@ -934,13 +964,13 @@ function graficosSituacao(){
   const g = porSituacao(S.propostas), total = g.reduce((a,x) => a + x.n, 0);
   if(!total) return '';
   const R = 54, C = 2*Math.PI*R; let ac = 0;
-  const arcos = g.filter(x => x.n).map(x => { const len = x.n/total*C, s = `<circle r="${R}" cx="80" cy="80" fill="none" stroke="${COR_STATUS[x.status]}" stroke-width="26" stroke-dasharray="${len.toFixed(2)} ${(C-len).toFixed(2)}" stroke-dashoffset="${(-ac).toFixed(2)}"><title>${esc(STATUS[x.status])}: ${x.n} (${Math.round(x.n/total*100)}%)</title></circle>`; ac += len; return s; }).join('');
+  const arcos = g.filter(x => x.n).map(x => { const len = x.n/total*C, s = `<circle class="clic" role="button" tabindex="0" data-act="filtrar" data-status="${x.status}" r="${R}" cx="80" cy="80" fill="none" stroke="${COR_STATUS[x.status]}" stroke-width="26" stroke-dasharray="${len.toFixed(2)} ${(C-len).toFixed(2)}" stroke-dashoffset="${(-ac).toFixed(2)}"><title>${esc(STATUS[x.status])}: ${x.n} (${Math.round(x.n/total*100)}%) — clique para ver</title></circle>`; ac += len; return s; }).join('');
   const maxV = Math.max(1, ...g.map(x => x.mensal + x.pontual));
   return `<div class="duas graficos">
     <div class="painel"><h2>Propostas por situação</h2><div class="rosca">
       <svg viewBox="0 0 160 160" role="img" aria-label="Propostas por situação: ${esc(g.filter(x=>x.n).map(x => STATUS[x.status] + ' ' + x.n).join(', '))}"><g transform="rotate(-90 80 80)">${arcos}</g><text x="80" y="78" text-anchor="middle" class="rosca-n">${total}</text><text x="80" y="96" text-anchor="middle" class="rosca-t">propostas</text></svg>
-      <table class="legenda"><tbody>${g.map(x => `<tr><td><i style="background:${COR_STATUS[x.status]}"></i>${esc(STATUS[x.status])}</td><td class="num"><b>${x.n}</b></td><td class="num">${total ? Math.round(x.n/total*100) : 0}%</td><td><button class="btn mini" data-act="filtrar" data-status="${x.status}" ${x.n?'':'disabled'}>ver</button></td></tr>`).join('')}</tbody></table></div></div>
-    <div class="painel"><h2>Valor em cada situação</h2>${g.map(x => `<div class="vbar"><div class="vbar-r"><span><i style="background:${COR_STATUS[x.status]}"></i>${esc(STATUS[x.status])}</span><span><b>${brl(x.mensal)}</b>/mês${x.pontual ? ' + ' + brl(x.pontual) + ' pontual' : ''}</span></div>
+      <table class="legenda"><tbody>${g.map(x => `<tr class="${x.n ? 'clic' : ''}" ${x.n ? `data-act="filtrar" data-status="${x.status}"` : ''}><td><i style="background:${COR_STATUS[x.status]}"></i>${esc(STATUS[x.status])}</td><td class="num"><b>${x.n}</b></td><td class="num">${total ? Math.round(x.n/total*100) : 0}%</td><td><button class="btn mini" data-act="filtrar" data-status="${x.status}" ${x.n?'':'disabled'}>ver</button></td></tr>`).join('')}</tbody></table></div></div>
+    <div class="painel"><h2>Valor em cada situação</h2>${g.map(x => `<div class="vbar ${x.n ? 'clic' : ''}" ${x.n ? `role="button" tabindex="0" data-act="filtrar" data-status="${x.status}" title="Ver as propostas em ${esc(STATUS[x.status])}"` : ''}><div class="vbar-r"><span><i style="background:${COR_STATUS[x.status]}"></i>${esc(STATUS[x.status])}</span><span><b>${brl(x.mensal)}</b>/mês${x.pontual ? ' + ' + brl(x.pontual) + ' pontual' : ''}</span></div>
       <div class="barra dupla" title="${esc(STATUS[x.status])}: ${brl(x.mensal)} por mês${x.pontual ? ' e ' + brl(x.pontual) + ' pontual' : ''}"><i style="width:${(x.mensal/maxV*100).toFixed(1)}%;background:${COR_STATUS[x.status]}"></i><i class="pont" style="width:${(x.pontual/maxV*100).toFixed(1)}%;background:${COR_STATUS[x.status]}"></i></div></div>`).join('')}
       <p class="dica" style="margin:10px 0 0">Barra cheia: honorário mensal. Barra hachurada: serviços pontuais.</p></div></div>`;
 }
@@ -948,18 +978,34 @@ function graficoOps(dias){
   const W = 760, H = 210, m = { e:28, d:6, t:14, b:34 }, lw = (W - m.e - m.d) / dias.length, max = Math.max(4, ...dias.map(d => d.total)), esc_y = v => (H - m.b) - v/max*(H - m.t - m.b);
   const grade = [0, .5, 1].map(f => { const v = Math.round(max*f), y = esc_y(v); return `<line x1="${m.e}" x2="${W-m.d}" y1="${y}" y2="${y}" class="g-l"/><text x="${m.e-5}" y="${y+3}" text-anchor="end" class="g-e">${v}</text>`; }).join('');
   const cols = dias.map((d,i) => { let y = H - m.b; const x = m.e + i*lw + lw*0.18, w = lw*0.64;
-    const seg = OPS.map(([k, rot, cor]) => { if(!d[k]) return ''; const h = d[k]/max*(H - m.t - m.b); y -= h; return `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}" fill="${cor}"><title>${dataBR(d.dia)} — ${rot}: ${d[k]}</title></rect>`; }).join('');
+    const sel = S.opsFiltro || {}, apag = (dia, k) => (sel.dia && sel.dia!==dia) || (sel.classe && sel.classe!==k) ? ' opacity=".28"' : '';
+    const alvo = d.total ? `<rect class="clic g-dia" role="button" tabindex="0" data-act="opsFiltrar" data-dia="${d.dia}" x="${(m.e + i*lw).toFixed(1)}" y="${m.t}" width="${lw.toFixed(1)}" height="${H - m.t - m.b + 18}" fill="transparent"><title>${dataBR(d.dia)}: ${d.total} operaç${d.total>1?'ões':'ão'} — clique para ver</title></rect>` : '';
+    const seg = alvo + OPS.map(([k, rot, cor]) => { if(!d[k]) return ''; const h = d[k]/max*(H - m.t - m.b); y -= h; return `<rect class="clic" data-act="opsFiltrar" data-dia="${d.dia}" x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}" fill="${cor}"${apag(d.dia, k)}><title>${dataBR(d.dia)} — ${rot}: ${d[k]} — clique para ver</title></rect>`; }).join('');
     return seg + (d.total ? `<text x="${(x+w/2).toFixed(1)}" y="${(y-4).toFixed(1)}" text-anchor="middle" class="g-v">${d.total}</text>` : '') + `<text x="${(x+w/2).toFixed(1)}" y="${H-m.b+14}" text-anchor="middle" class="g-e">${d.dia.slice(8)}/${d.dia.slice(5,7)}</text>`; }).join('');
   const tot = OPS.map(([k, rot, cor]) => [rot, cor, dias.reduce((a,d) => a + d[k], 0)]);
   return `<svg viewBox="0 0 ${W} ${H}" class="g-ops" role="img" aria-label="Operações por dia nos últimos ${dias.length} dias. ${esc(tot.filter(t => t[2]).map(t => t[0] + ': ' + t[2]).join(', ') || 'Nenhuma operação')}">${grade}${cols}</svg>
-    <div class="g-leg">${tot.map(t => `<span><i style="background:${t[1]}"></i>${esc(t[0])} <b>${t[2]}</b></span>`).join('')}</div>`;
+    <div class="g-leg">${OPS.map(([k, rot, cor], j) => `<button class="g-cls ${(S.opsFiltro||{}).classe===k ? 'ativo' : ''}" data-act="opsFiltrar" data-classe="${k}" ${tot[j][2] ? '' : 'disabled'} title="Ver só: ${esc(rot)}"><i style="background:${cor}"></i>${esc(rot)} <b>${tot[j][2]}</b></button>`).join('')}</div>`;
+}
+async function carregaNaoAbertos(){
+  const l = await DB.naoAbertos().catch(() => []); if(S.view!=='painel' || !l.length) return;
+  const h = l.map(x => { const p = S.propostas.find(y => y.id===x.proposta_id); if(!p || p.excluido_em) return ''; const dias = Math.floor((Date.now() - new Date(x.criado_em)) / 864e5);
+    return `<div class="aviso ambar"><span>Proposta ${esc(numeroFmt(p))} de <b>${esc(p.cliente_nome)}</b>: o link enviado a <b>${esc(x.nome)}</b> por ${x.canal==='whatsapp' ? 'WhatsApp' : 'e-mail'} (${esc(x.enviado_para||'')}) há ${dias} dias <b>ainda não foi aberto</b>. Confira o contato ou reenvie.</span><button class="btn mini" data-act="doc" data-id="${p.id}">Abrir</button></div>`; }).join('');
+  if(!h) return; const alvo = document.querySelector('.indicadores'); if(!alvo || $('naoAbertos')) return;
+  alvo.insertAdjacentHTML('afterend', `<div class="painel" id="naoAbertos"><h2>Links sem confirmação de recebimento</h2>${h}</div>`);
 }
 async function carregaOps15(){
   const el = $('ops15'); if(!el) return;
   const r = await tenta(() => DB.atividades(15)); if(!r || S.view!=='painel' || !$('ops15')) return;
-  S.ops15 = r.lista; const dias = opsPorDia(r.lista, hojeISO(), 15), n = r.lista.length;
-  $('ops15').innerHTML = graficoOps(dias) + (r.completo ? '' : '<p class="dica">Mostrando só as etapas principais. Para ver também envios, acessos do cliente e alterações, rode no banco a migração 08_migracao_v1_5_0_atividades.sql.</p>') +
-    (n ? `<ul class="linha-tempo feed" id="feed15">${r.lista.slice(0,12).map(feedHTML).join('')}</ul>${n>12 ? `<button class="btn mini" data-act="feedTudo" style="margin-top:8px">Mostrar as ${n} operações</button>` : ''}` : '<div class="vazio">Nenhuma operação nos últimos 15 dias.</div>');
+  S.ops15 = r.lista; S.ops15completo = r.completo; S.opsFiltro = null; S.feedTudo = false; desenhaOps15();
+}
+function desenhaOps15(){
+  const el = $('ops15'); if(!el) return;
+  const lista = S.ops15 || [], f = S.opsFiltro, dias = opsPorDia(lista, hojeISO(), 15);
+  const vis = f ? lista.filter(x => (!f.dia || diaSP(x.quando)===f.dia) && (!f.classe || classeOp(x)===f.classe)) : lista, corte = f || S.feedTudo ? vis : vis.slice(0, 12);
+  const rotulo = f ? [f.dia ? 'dia ' + dataBR(f.dia) : '', f.classe ? (OPS.find(o => o[0]===f.classe) || [,''])[1].toLowerCase() : ''].filter(Boolean).join(' · ') : '';
+  el.innerHTML = graficoOps(dias) + (S.ops15completo ? '' : '<p class="dica">Mostrando só as etapas principais. Para ver também envios, acessos do cliente e alterações, rode no banco a migração 08_migracao_v1_5_0_atividades.sql.</p>') +
+    (f ? `<div class="chip">Mostrando <b>${vis.length}</b> operaç${vis.length===1?'ão':'ões'}: <b>${esc(rotulo)}</b> <button class="btn mini" data-act="opsLimpar">Limpar filtro</button></div>` : '<p class="dica" style="margin:6px 0 0">Clique numa coluna para ver as operações daquele dia, ou num item da legenda para ver só um tipo. Os dois filtros se combinam.</p>') +
+    (corte.length ? `<ul class="linha-tempo feed" id="feed15">${corte.map(feedHTML).join('')}</ul>${!f && !S.feedTudo && lista.length>12 ? `<button class="btn mini" data-act="feedTudo" style="margin-top:8px">Mostrar as ${lista.length} operações</button>` : ''}` : `<div class="vazio">${f ? 'Nenhuma operação com este filtro.' : 'Nenhuma operação nos últimos 15 dias.'}</div>`);
 }
 function feedHTML(x){ return linhaTempoHTML(x).replace('</span> ', `</span> <button class="elo" data-act="doc" data-id="${esc(x.proposta_id)}">${esc(numeroFmt(x))} · ${esc(x.cliente_nome)}</button> — `); }
 const ICO_RELOGIO = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 7v5l3.5 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
@@ -991,22 +1037,33 @@ function linhaTempoHTML(x){
 }
 function urlCliente(token){ return location.href.split('#')[0] + '#/c/' + token; }
 function zapNumero(c){ const d = String(c||'').replace(/\D/g,''); return d.length<=11 ? '55' + d : d; }
-function emailHTML(titulo, corpo, botao, url){
-  const e = esc_();
-  return `<div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:0 auto;color:#2f2d2e">
-  <div style="background:#4F4C4D;color:#fff;padding:18px 26px;border-bottom:5px solid #FFF200;text-align:center;font-size:18px;font-weight:bold">${esc(titulo)}</div>
-  <div style="border:1px solid #dfe7eb;border-top:none;padding:26px 30px;font-size:14px;line-height:1.55">${corpo}
-    <p style="text-align:center;margin:26px 0"><a href="${esc(url)}" style="background:#BC151B;color:#fff;text-decoration:none;padding:13px 26px;font-weight:bold;display:inline-block">${esc(botao)}</a></p>
-    <p style="font-size:12px;color:#6f6b6c">Se o botão não abrir, copie este endereço no navegador:<br><span style="word-break:break-all">${esc(url)}</span></p>
-    <p style="font-size:12px;color:#6f6b6c">Este endereço é pessoal. Não o encaminhe a terceiros.</p></div>
-  <p style="font-size:11px;color:#999;text-align:center;margin-top:12px">${esc(S.tenant.nome)} · ${esc(e.telefone||'')} · ${esc(e.site||'')}</p></div>`;
+function emailArtecon(m){
+  const e = esc_(), nome = S.tenant.nome;
+  const chaves = (m.chaves || []).filter(k => k[1]).map(k => `<tr><td style="padding:5px 12px 5px 0;color:#6f6b6c;font-size:13px;white-space:nowrap;vertical-align:top">${esc(k[0])}</td><td style="padding:5px 0;font-size:14px;${k[2] ? 'font-weight:bold;color:#BC151B' : 'font-weight:bold;color:#2f2d2e'}">${esc(k[1])}</td></tr>`).join('');
+  return `<div style="background:#f3f5f6;padding:24px 12px;font-family:Arial,Helvetica,sans-serif;color:#2f2d2e">
+<table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;margin:0 auto;background:#ffffff;border:1px solid #dfe7eb;border-collapse:collapse">
+<tr><td style="padding:22px 30px 14px;text-align:center"><img src="${esc(LOGO_EMAIL)}" alt="${esc(nome)}" width="170" style="display:inline-block;border:0;max-width:170px;height:auto"></td></tr>
+<tr><td style="background:#BC151B;color:#ffffff;text-align:center;padding:14px 24px;font-size:18px;font-weight:bold">${esc(m.titulo)}</td></tr>
+<tr><td style="height:4px;background:#FFF200;font-size:0;line-height:0">&nbsp;</td></tr>
+<tr><td style="padding:26px 30px 10px;font-size:14px;line-height:1.6">
+${m.saudacao ? `<p style="margin:0 0 12px">${esc(m.saudacao)}</p>` : ''}${m.paragrafos.map(p => `<p style="margin:0 0 12px">${p}</p>`).join('')}
+${chaves ? `<table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin:16px 0;background:#f0fafe;border-left:4px solid #00AEEF"><tr><td style="padding:10px 16px"><table role="presentation" cellpadding="0" cellspacing="0">${chaves}</table></td></tr></table>` : ''}
+${m.botao ? `<p style="text-align:center;margin:24px 0 18px"><a href="${esc(m.botao.url)}" style="background:#BC151B;color:#ffffff;text-decoration:none;padding:13px 28px;font-weight:bold;display:inline-block">${esc(m.botao.txt)}</a></p>
+<p style="font-size:12px;color:#6f6b6c;margin:0 0 12px">Se o botão não abrir, copie este endereço no navegador:<br><span style="word-break:break-all">${esc(m.botao.url)}</span></p>` : ''}
+${m.aviso ? `<p style="font-size:12px;color:#6f6b6c;margin:0 0 12px">${esc(m.aviso)}</p>` : ''}
+</td></tr>
+<tr><td style="padding:16px 30px 20px;border-top:1px solid #dfe7eb;font-size:12px;line-height:1.5;color:#6f6b6c;text-align:center"><b style="color:#4F4C4D">${esc(nome)}</b><br>${esc([e.telefone, e.site].filter(Boolean).join(' · '))}${e.endereco ? '<br>' + esc(e.endereco) : ''}</td></tr>
+</table>
+<p style="max-width:600px;margin:12px auto 0;font-size:11px;color:#999999;text-align:center">Mensagem automática do sistema de propostas da ${esc(nome)}.</p></div>`;
 }
 function textoEnvio(p, sig, tipo, url){
-  const n = numeroFmt(p), prim = sig.nome.split(' ')[0];
+  const n = numeroFmt(p), prim = sig.nome.split(' ')[0], base = [['Proposta', 'nº ' + n], ['Cliente', p.cliente_nome]];
   if(tipo==='leitura') return { assunto:`Proposta de Honorários nº ${n} — via assinada`, zap:`Olá, ${prim}! A Proposta de Honorários nº ${n} foi assinada por todos. Segue a via para impressão (válida por 30 dias): ${url}`,
-    html:emailHTML('Proposta assinada por todos', `<p>Olá, ${esc(prim)}!</p><p>A <b>Proposta de Honorários nº ${esc(n)}</b>, de ${esc(p.cliente_nome)}, foi assinada por todas as partes. No endereço abaixo você abre a via completa, com o comprovante das assinaturas, e pode salvar em PDF ou imprimir.</p><p>O endereço fica disponível por 30 dias.</p>`, 'Abrir a via assinada', url) };
+    html:emailArtecon({ titulo:'Proposta assinada por todos', saudacao:`Olá, ${prim}!`, paragrafos:[`A <b>Proposta de Honorários nº ${esc(n)}</b> foi assinada por todas as partes. No endereço abaixo você abre a via completa, com o comprovante das assinaturas, e pode salvar em PDF ou imprimir.`],
+      chaves:base, botao:{ txt:'Abrir a via assinada', url }, aviso:'Este endereço é pessoal, só permite leitura e fica disponível por 30 dias. Não o encaminhe a terceiros.' }) };
   return { assunto:`Proposta de Honorários nº ${n} — ${S.tenant.nome}`, zap:`Olá, ${prim}! Segue a Proposta de Honorários nº ${n} da ${S.tenant.nome} para leitura e assinatura eletrônica: ${url}`,
-    html:emailHTML('Proposta de Honorários', `<p>Olá, ${esc(prim)}!</p><p>Segue a <b>Proposta de Honorários nº ${esc(n)}</b>, preparada para ${esc(p.cliente_nome)}. No endereço abaixo você lê a proposta completa e, estando de acordo, assina eletronicamente ali mesmo.</p>${p.exige_foto ? '<p>Para assinar será pedida uma foto sua segurando um documento com foto.</p>' : ''}${p.validade ? `<p>Validade da proposta: ${esc(dataBR(p.validade))}.</p>` : ''}`, 'Ler e assinar a proposta', url) };
+    html:emailArtecon({ titulo:'Proposta de Honorários', saudacao:`Olá, ${prim}!`, paragrafos:[`Segue a <b>Proposta de Honorários nº ${esc(n)}</b>. No endereço abaixo você lê a proposta completa e, estando de acordo, assina eletronicamente ali mesmo.`, ...(p.exige_foto ? ['Para assinar será pedida uma foto sua segurando um documento com foto.'] : [])],
+      chaves:[...base, ['Validade da proposta', p.validade ? dataBR(p.validade) : '', true]], botao:{ txt:'Ler e assinar a proposta', url }, aviso:'Este endereço é pessoal. Não o encaminhe a terceiros. Depois da sua assinatura ele é encerrado.' }) };
 }
 async function enviarLink(p, sig, tipo, canal, janela){
   const r = await DB.linkSignatario(sig.id, tipo, canal), url = urlCliente(r.token), tx = textoEnvio(p, sig, tipo, url);
@@ -1051,9 +1108,19 @@ function desenhaAssinaturas(p){
       <button class="btn" data-act="copiarLink" title="Abre o app inteiro e pede login: só para quem é do escritório">Copiar link interno</button>
       ${ass.some(a => a.foto) ? '<label class="marcar" style="padding:0"><input type="checkbox" id="incFotos" checked> Imprimir as fotos no comprovante</label>' : ''}
     </div>
+    ${filaHTML(p)}
     ${p.exige_foto && !fim ? '<p class="dica" style="margin:10px 0 0">Esta proposta exige foto com documento na assinatura do cliente.</p>' : ''}
     ${!diretor && ass.length ? '<p class="dica" style="margin:10px 0 0">CPF, IP e fotos dos signatários aparecem completos só para o diretor.</p>' : ''}`;
   el.innerHTML = h;
+}
+const ROT_FILA = { via_assinada:'Via assinada', recibo_assinatura:'Recibo da assinatura', aviso_abertura:'Aviso: cliente abriu', aviso_assinatura:'Aviso: nova assinatura', aviso_conclusao:'Aviso: todos assinaram' };
+function filaHTML(p){
+  const f = S.doc.fila; if(f === null) return p.assinada_em ? '' : '<p class="dica" style="margin:10px 0 0">Envio automático da via desligado (banco sem a migração 09): quando todos assinarem, a via é enviada por quem estiver logado.</p>';
+  if(!f.length) return '<p class="dica" style="margin:10px 0 0">E-mails automáticos ligados: o escritório é avisado quando o cliente abrir e assinar, e a via assinada sai sozinha depois da última assinatura.</p>';
+  const pend = f.filter(x => !x.enviado_em && !x.cancelado_em), erro = pend.filter(x => x.ultimo_erro);
+  return `<details class="fila" ${erro.length ? 'open' : ''}><summary>E-mails automáticos: ${f.filter(x => x.enviado_em).length} enviado${f.filter(x => x.enviado_em).length===1?'':'s'}${pend.length ? `, <b>${pend.length} na fila</b>` : ''}${erro.length ? ` — <span class="vencida">${erro.length} com erro</span>` : ''}</summary>
+    <table class="lista"><tbody>${f.map(x => `<tr><td>${esc(ROT_FILA[x.tipo] || x.tipo)}</td><td><small>${esc(x.destinatario)}</small></td><td>${x.enviado_em ? 'enviado em ' + esc(dataHora(x.enviado_em)) : x.cancelado_em ? '<small>dispensado: ' + esc(x.ultimo_erro || '') + '</small>' : x.ultimo_erro ? `<span class="vencida">erro na ${x.tentativas}ª tentativa:</span> <small>${esc(x.ultimo_erro)}</small><br><small>nova tentativa ${x.tentativas>=6 ? 'esgotada: envie pelo botão da via' : 'às ' + esc(dataHora(x.proxima_tentativa_em).slice(-5))}</small>` : 'na fila'}</td></tr>`).join('')}</tbody></table>
+    ${pend.length ? '<button class="btn mini" data-act="filaAgora" style="margin-top:8px">Processar a fila agora</button>' : ''}</details>`;
 }
 function dlgSignatario(id){
   const p = S.propostas.find(x => x.id===S.docId); let s = id ? S.doc.sigs.find(x => x.id===id) : null;
@@ -1098,9 +1165,9 @@ function tabelaPropostas(arr, compacta){
 }
 function listarPropostas(){
   const q = S.busca.trim().toLowerCase(), qd = soDoc(q);
-  const arr = propostasOrdenadas().filter(p => (!S.filtroStatus || p.status===S.filtroStatus) &&
+  const arr = propostasOrdenadas().filter(p => (!S.filtroStatus || p.status===S.filtroStatus) && (!S.filtroExtra || S.filtroExtra.fn(p)) &&
     (!q || p.cliente_nome.toLowerCase().includes(q) || String(p.contato||'').toLowerCase().includes(q) || numeroFmt(p).includes(q) || (qd.length>=3 && /^\d/.test(qd) && String(p.cliente_documento||'').includes(qd))));
-  $('listaPropostas').innerHTML = tabelaPropostas(arr, false);
+  $('listaPropostas').innerHTML = (S.filtroExtra ? `<div class="chip">Filtro do painel: <b>${esc(S.filtroExtra.rotulo)}</b> — ${arr.length} proposta${arr.length===1?'':'s'} <button class="btn mini" data-act="limparExtra">Limpar filtro</button></div>` : '') + tabelaPropostas(arr, false);
 }
 
 /* ----- formulário ----- */
@@ -1288,8 +1355,19 @@ const ACOES = {
   duplicar(el){ const p = S.propostas.find(x => x.id===el.dataset.id); if(!p) return; S.F = copiaF(p, true); S.docPrevia = null; ir('form'); toast('Cópia aberta como nova proposta. Revise e salve.'); },
   doc(el){ if($('dlg').open) $('dlg').close(); S.docPrevia = null; S.docId = el.dataset.id; ir('documento'); },
   atividades(el){ dlgAtividades(el.dataset.id); },
-  filtrar(el){ S.filtroStatus = el.dataset.status; S.busca = ''; ir('propostas'); },
-  feedTudo(el){ $('feed15').innerHTML = (S.ops15 || []).map(feedHTML).join(''); el.remove(); },
+  filtrar(el){ S.filtroStatus = el.dataset.status; S.filtroExtra = null; S.busca = ''; ir('propostas'); },
+  feedTudo(){ S.feedTudo = true; desenhaOps15(); },
+  opsFiltrar(el){ const f = { dia:null, classe:null, ...(S.opsFiltro || {}) };      // coluna = dia; legenda = tipo; os dois se combinam
+    if(el.dataset.dia) f.dia = f.dia===el.dataset.dia ? null : el.dataset.dia; else f.classe = f.classe===el.dataset.classe ? null : el.dataset.classe;
+    S.opsFiltro = f.dia || f.classe ? f : null; desenhaOps15(); const c = document.querySelector('#ops15 .chip'); if(c) c.scrollIntoView({ block:'nearest', behavior:'smooth' }); },
+  opsLimpar(){ S.opsFiltro = null; desenhaOps15(); },
+  filtroRapido(el){ const mes = hojeISO().slice(0,7), F = {
+      mes:      { rotulo:'criadas em ' + MESES[+mes.slice(5)-1] + ' de ' + mes.slice(0,4), fn:p => String(p.data_proposta).slice(0,7)===mes },
+      abertas:  { rotulo:'em aberto (Enviada ou Em negociação)', fn:p => p.status==='enviada' || p.status==='negociacao' },
+      decididas:{ rotulo:'decididas (Aprovada ou Perdida)', fn:p => p.status==='aprovada' || p.status==='perdida' },
+      aprovadas:{ rotulo:'aprovadas', fn:p => p.status==='aprovada' } }[el.dataset.f];
+    if(!F) return; S.filtroExtra = F; S.filtroStatus = ''; S.busca = ''; ir('propostas'); },
+  limparExtra(){ S.filtroExtra = null; listarPropostas(); },
   irPropostas(){ ir('propostas'); },
   previa(){ const F = leF(); const er = validarProposta(F); if(er.length){ toast(er[0], true); return; } S.docPrevia = JSON.parse(JSON.stringify(F)); ir('documento'); },
   voltarForm(){ S.docPrevia = null; ir('form'); },
@@ -1326,11 +1404,13 @@ const ACOES = {
     if(falhas.length) toast('Não enviado para ' + falhas.join(' | '), true); else toast(`E-mail enviado a ${n} signatário${n===1?'':'s'}.`);
     VIEWS.documento(); },
   async viaTodos(){ const p = S.propostas.find(x => x.id===S.docId); if(!p) return; await tenta(async () => { await enviarViaATodos(p); await DB.recarregar(p.id); }); VIEWS.documento(); },
+  async filaAgora(){ await tenta(async () => { const r = await DB.filaDisparar(); toast(/^disparado/.test(r) ? 'Fila acionada. Atualizando em instantes…' : 'Não foi possível acionar: ' + r, !/^disparado/.test(r)); setTimeout(() => { if(S.view==='documento') VIEWS.documento(); }, 4000); }); },
   escAssinar(){ dlgEscritorio(); },
   async escConfirmar(){ const p = S.propostas.find(x => x.id===S.docId), nome = $('x_nome').value.trim().replace(/\s+/g,' '), cpf = soDoc($('x_cpf').value);
     if(nome.length<5 || !nome.includes(' ')){ toast('Informe o nome completo.', true); return; } if(!cpfValido(cpf)){ toast('CPF inválido.', true); return; } if(!$('x_ok').checked){ toast('Marque a declaração para assinar.', true); return; }
     await tenta(async () => { const r = await DB.escritorioAssinar(p.id, nome, cpf); $('dlg').close();
-      if(r.concluida){ toast('Assinado. Todas as assinaturas concluídas: enviando a via aos signatários…'); const p2 = S.propostas.find(x => x.id===p.id); await enviarViaATodos(p2, true); await DB.recarregar(p.id); }
+      if(r.concluida && S.filaAtiva) toast('Assinado. Todas as assinaturas concluídas: a via assinada está sendo enviada automaticamente aos signatários.');
+      else if(r.concluida){ toast('Assinado. Todas as assinaturas concluídas: enviando a via aos signatários…'); const p2 = S.propostas.find(x => x.id===p.id); await enviarViaATodos(p2, true); await DB.recarregar(p.id); }
       else toast('Assinatura do escritório registrada. Falta a assinatura dos clientes.');
       VIEWS.documento(); }); },
   async copiarLink(){ const url = location.href.split('#')[0] + '#/proposta/' + S.docId; try{ await navigator.clipboard.writeText(url); toast('Link da proposta copiado.'); }catch(e){ prompt('Copie o link da proposta:', url); } },
@@ -1376,8 +1456,12 @@ const ACOES = {
 };
 
 document.addEventListener('click', ev => {
-  const n = ev.target.closest('[data-ir]'); if(n){ ir(n.dataset.ir); return; }
+  const n = ev.target.closest('[data-ir]'); if(n){ if(n.dataset.ir==='propostas'){ S.filtroExtra = null; } ir(n.dataset.ir); return; }
   const a = ev.target.closest('[data-act]'); if(a && !a.disabled && ACOES[a.dataset.act]){ ev.preventDefault(); ACOES[a.dataset.act](a); }
+});
+document.addEventListener('keydown', ev => {
+  if(ev.key!=='Enter' && ev.key!==' ') return; const a = ev.target.closest && ev.target.closest('[data-act][tabindex]'); if(!a || a.tagName==='BUTTON') return;
+  ev.preventDefault(); if(ACOES[a.dataset.act]) ACOES[a.dataset.act](a);
 });
 document.addEventListener('input', ev => {
   const el = ev.target;
