@@ -61,6 +61,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 .ind .val{font:500 30px/1.15 var(--titulo);color:var(--cinza);margin:6px 0 4px}
 .ind .sub{font-size:12.5px;color:var(--suave)}
 .duas{display:grid;grid-template-columns:1.5fr 1fr;gap:20px}
+.duas>*{min-width:0}
 .rolagem{overflow-x:auto}
 table.lista{width:100%;border-collapse:collapse}
 .lista th,.lista td{text-align:left;padding:11px 8px;border-bottom:1px solid var(--linha);vertical-align:middle}
@@ -154,6 +155,28 @@ table.miolo .comprovante th{width:48mm;background:#f2f4f5;font-weight:700}
 .comprovante .hash{font-family:Consolas,'Courier New',monospace;font-size:8.5pt;word-break:break-all}
 .comprovante p{font-size:10pt}
 
+/* ---------- painel com gráficos (v1.5.0) ---------- */
+.graficos{grid-template-columns:1fr 1.25fr}
+.rosca{display:flex;gap:22px;align-items:center;flex-wrap:wrap}
+.rosca svg{width:170px;height:170px;flex:none}
+.rosca-n{font:500 30px var(--titulo);fill:var(--cinza)}.rosca-t{font:12px var(--texto);fill:var(--suave)}
+.legenda{border-collapse:collapse;flex:1;min-width:220px}
+.legenda td{padding:5px 6px;border-bottom:1px solid var(--linha)}
+.legenda i,.vbar i:not(.barra i),.g-leg i{display:inline-block;width:11px;height:11px;margin-right:7px;vertical-align:-1px}
+.vbar{margin-bottom:11px}.vbar-r{display:flex;justify-content:space-between;gap:10px;margin-bottom:4px;flex-wrap:wrap}
+.barra.dupla{display:flex;height:12px}.barra.dupla i{height:100%}
+.barra.dupla i.pont{opacity:.55;background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.75) 0 3px,transparent 3px 6px)!important}
+.g-ops{width:100%;height:auto;display:block}
+.g-l{stroke:var(--linha);stroke-width:1}.g-e{font:10px var(--texto);fill:var(--suave)}.g-v{font:700 11px var(--texto);fill:var(--cinza)}
+.g-leg{display:flex;flex-wrap:wrap;gap:6px 18px;margin:8px 0 4px;font-size:12.5px}
+.feed{margin-top:12px}
+.elo{border:0;background:none;padding:0;color:var(--vermelho);font-weight:700;cursor:pointer;text-decoration:underline;text-underline-offset:2px}
+.ctrl{display:flex;gap:9px;align-items:flex-start}
+.ico{border:1px solid var(--linha);background:#fff;color:var(--cinza);width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;flex:none}
+.ico:hover{border-color:var(--ciano);color:#056a90}
+dialog.largo{width:min(820px,94vw)}
+dialog .linha-tempo{max-height:60vh;overflow:auto}
+
 /* ---------- login ---------- */
 .login{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
 .login .cx{background:#fff;border:1px solid var(--linha);border-top:8px solid var(--amarelo);padding:34px;width:min(400px,100%)}
@@ -199,7 +222,7 @@ table.miolo td{padding:0}
   .menu button{text-align:center;padding:12px 4px}
   .principal{padding:22px 16px 50px}
   .indicadores{grid-template-columns:repeat(2,1fr)}.ind{margin:-1px 0 0 -1px}
-  .duas{grid-template-columns:1fr}
+  .duas,.graficos{grid-template-columns:1fr}
   .linha-tempo .lt-quando{display:block}.linha-tempo .dif{margin-left:0}
   .grade{grid-template-columns:1fr 1fr}.campo,.campo.c1{grid-column:span 2}
   .item{grid-template-columns:1fr 1fr}.item.cab{display:none}
@@ -489,6 +512,40 @@ function etapaAtual(p){
   return null;
 }
 
+/* ----- painel: situação e operações por dia (v1.5.0) ----- */
+const OPS = [['criadas','Criadas','#4F4C4D'],['enviadas','Enviadas','#00AEEF'],['assinaturas','Assinaturas','#6fbf93'],['aprovadas','Aprovadas','#147343'],['perdidas','Perdidas','#BC151B'],['alteracoes','Alterações','#d8cd00'],['outros','Envios e acessos','#b9c4cc']];
+const COR_STATUS = { rascunho:'#8d9599', enviada:'#00AEEF', negociacao:'#d8cd00', aprovada:'#147343', perdida:'#BC151B' };
+function diaSP(iso){ const d = new Date(iso); if(isNaN(d)) return ''; const f = new Intl.DateTimeFormat('en-CA',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit'}).format(d); return f; }
+function classeOp(ev){
+  if(ev.tipo==='criada') return 'criadas';
+  if(ev.tipo==='status'){ const p = (ev.detalhe||{}).para; return p==='enviada' ? 'enviadas' : p==='aprovada' ? 'aprovadas' : p==='perdida' ? 'perdidas' : 'outros'; }
+  if(ev.tipo==='assinada' || ev.tipo==='assinada_escritorio') return 'assinaturas';
+  if(ev.tipo==='alteracao') return 'alteracoes';
+  return 'outros';
+}
+function opsPorDia(eventos, hoje, dias){
+  const out = []; for(let i=dias-1;i>=0;i--){ const o = { dia:somaDias(hoje,-i), total:0 }; OPS.forEach(k => o[k[0]] = 0); out.push(o); }
+  const idx = Object.fromEntries(out.map((o,i) => [o.dia,i]));
+  (eventos||[]).forEach(ev => { const i = idx[diaSP(ev.quando)]; if(i===undefined) return; out[i][classeOp(ev)]++; out[i].total++; });
+  return out;
+}
+/* sem a função do banco (ou no modo local), reconstrói as operações principais a partir das datas gravadas em cada proposta */
+function eventosDasPropostas(props){
+  const ev = [];
+  (props||[]).filter(p => !p.excluido_em).forEach(p => { const b = { proposta_id:p.id, numero:p.numero, ano:p.ano, cliente_nome:p.cliente_nome, quem:null };
+    if(p.criado_em) ev.push({ ...b, quando:p.criado_em, tipo:'criada', detalhe:{ para:'rascunho' } });
+    if(p.enviada_em) ev.push({ ...b, quando:p.enviada_em, tipo:'status', detalhe:{ de:'rascunho', para:'enviada' } });
+    if(p.escritorio_assinou_em) ev.push({ ...b, quando:p.escritorio_assinou_em, tipo:'assinada_escritorio', detalhe:{} });
+    if(p.clientes_assinaram_em) ev.push({ ...b, quando:p.clientes_assinaram_em, tipo:'assinada', detalhe:{} });
+    if(p.aprovada_em && p.status==='aprovada') ev.push({ ...b, quando:p.aprovada_em, tipo:'status', detalhe:{ para:'aprovada' } });
+    if(p.perdida_em && p.status==='perdida') ev.push({ ...b, quando:p.perdida_em, tipo:'status', detalhe:{ para:'perdida' } }); });
+  return ev.sort((a,b) => a.quando < b.quando ? 1 : -1);
+}
+function porSituacao(props){
+  const at = (props||[]).filter(p => !p.excluido_em);
+  return STATUS_ORDEM.map(s => { const g = at.filter(p => p.status===s); return { status:s, n:g.length, mensal:r2(g.reduce((a,p)=>a+(+p.total_mensal||0),0)), pontual:r2(g.reduce((a,p)=>a+(+p.total_pontual||0),0)) }; });
+}
+
 
 </script>
 <script>
@@ -500,9 +557,15 @@ function etapaAtual(p){
 const CFG = { SUPABASE_URL:'https://yeujqjtjqtegsnzwwazb.supabase.co', SUPABASE_ANON_KEY:'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlldWpxanRqcXRlZ3Nuend3YXpiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1NDE0OTksImV4cCI6MjEwMTExNzQ5OX0.5p1_wJ_aApJpRrN6tFu8qmAytK5FMXWt1soCubpzqao' };
 const SUPABASE_JS = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js';
 
-const APP_VERSION = '1.4.1';
+const APP_VERSION = '1.5.0';
 const PORTAL_URL = 'https://arteconartescontabeis-design.github.io/portal/';
 const CHANGELOG = [
+  { v:'1.5.0', data:'21/09/2026', itens:[
+    'Visão geral virou painel com gráficos: propostas por situação (quantidade e participação), valor mensal e pontual em cada situação e as operações dos últimos 15 dias, dia a dia (criadas, enviadas, assinaturas, aprovadas, perdidas, alterações, envios e acessos).',
+    'Abaixo do gráfico, a lista das operações dos últimos 15 dias, da mais recente para a mais antiga, com o número da proposta, o cliente, quem fez e a hora; clicar abre a proposta.',
+    'Na lista de propostas, a coluna Controle ganhou o botão de atividades (ícone de relógio): abre, sem sair da lista, tudo o que já aconteceu com aquela proposta.',
+    'Banco: função prop_atividades (migração 08). Sem ela o painel funciona, mas mostra só as etapas principais (criação, envio, assinatura, aprovação e perda).'
+  ]},
   { v:'1.4.1', data:'21/09/2026', itens:[
     'Condições: a forma de pagamento do valor pontual agora é escolhida numa lista, e o padrão é “Junto com o boleto mensal” (com data de vencimento opcional). As outras opções são: em data de vencimento específica, parcelado e na aceitação da proposta.',
     'Parcelas ganharam data de vencimento própria e o botão “Dividir em boletos mensais”, que monta as parcelas já vinculadas aos próximos boletos.',
@@ -627,6 +690,8 @@ const Local = {
   async salvarEscritorio(e){ this.db.tenant.escritorio = e; this.grava(); },
   async linhaDoTempo(id){ return (await this.historico(id)).map(h => ({ quando:h.criado_em, tipo:h.de ? 'status' : 'criada', quem:h.usuario_email, detalhe:{ de:h.de, para:h.para } })); },
   async signatarios(){ return []; }, async linksDe(){ return []; }, async assinaturas(){ return []; },
+  async atividades(dias){ const desde = new Date(Date.now() - dias*864e5).toISOString(), px = Object.fromEntries(this.db.propostas.map(p => [p.id, p]));
+    return { completo:true, lista:this.db.historico.filter(h => h.criado_em >= desde && px[h.proposta_id]).map(h => { const p = px[h.proposta_id]; return { quando:h.criado_em, tipo:h.de ? 'status' : 'criada', quem:h.usuario_email, detalhe:{ de:h.de, para:h.para }, proposta_id:p.id, numero:p.numero, ano:p.ano, cliente_nome:p.cliente_nome }; }).sort((a,b) => a.quando < b.quando ? 1 : -1) }; },
   async sair(){}
 };
 
@@ -670,6 +735,10 @@ const Nuvem = {
   async alterar(tab, id, patch){ const { data, error } = await this.sb.from(TAB[tab]).update(patch).eq('id', id).select().single(); if(error) throw this.erro(error); const i = S[tab].findIndex(x => x.id===id); if(i>=0) S[tab][i] = data; return data; },
   async historico(id){ const { data, error } = await this.sb.from('prop_historico').select('*').eq('proposta_id', id).order('criado_em'); if(error) throw this.erro(error); return data; },
   async linhaDoTempo(id){ const { data, error } = await this.sb.rpc('prop_linha_do_tempo', { p_proposta:id }); if(error) throw this.erro(error); return data; },
+  async atividades(dias){ const { data, error } = await this.sb.rpc('prop_atividades', { p_dias:dias });
+    if(!error) return { completo:true, lista:data || [] };
+    const desde = new Date(Date.now() - dias*864e5).toISOString();            // banco ainda sem a migração 08: usa as datas das próprias propostas
+    return { completo:false, lista:eventosDasPropostas(S.propostas).filter(e => e.quando >= desde) }; },
   async signatarios(id){ const { data, error } = await this.sb.from('prop_signatarios').select('*').eq('proposta_id', id).is('excluido_em', null).order('ordem').order('criado_em'); if(error) throw this.erro(error); return data; },
   async salvarSignatario(id, row){ const q = id ? this.sb.from('prop_signatarios').update(row).eq('id', id) : this.sb.from('prop_signatarios').insert({ ...row, tenant_id:S.tenant.id }); const { error } = await q.select().single(); if(error) throw this.erro(error); },
   async linksDe(id){ const { data, error } = await this.sb.from('prop_links').select('id,signatario_id,tipo,canal,enviado_para,criado_em,enviado_em,expira_em,acessos,primeiro_acesso_em,ultimo_acesso_em').eq('proposta_id', id).is('revogado_em', null); if(error) throw this.erro(error); return data; },
@@ -743,10 +812,13 @@ const VIEWS = {
       const a2 = at.filter(p => p.assinada_em && p.escritorio_assinou_em && !p.via_enviada_em).map(p => `<div class="aviso ambar"><span>Proposta ${esc(numeroFmt(p))} de <b>${esc(p.cliente_nome)}</b> foi assinada por todos em ${esc(dataHora(p.assinada_em))}. <b>A via assinada ainda não foi enviada.</b></span>${abre(p)}</div>`);
       return a1.length || a2.length ? `<div class="painel"><h2>Assinaturas pendentes</h2>${a1.join('')}${a2.join('')}</div>` : ''; })()}
     ${avisos ? `<div class="painel"><h2>Validade</h2>${avisos}</div>` : ''}
+    ${graficosSituacao()}
+    <div class="painel"><h2>Operações dos últimos 15 dias</h2><div id="ops15"><p class="dica">Carregando…</p></div></div>
     <div class="duas">
       <div class="painel"><h2>Propostas recentes</h2>${tabelaPropostas(propostasOrdenadas().slice(0,6), true)}</div>
       <div class="painel"><h2>Funil comercial</h2>${k.funil.map(([s,n]) => `<div class="funil-linha"><span>${esc(STATUS[s])}</span><b>${n}</b></div><div class="barra"><i style="width:${n ? Math.max(3, n/max*100) : 0}%"></i></div>`).join('')}</div>
     </div>`;
+    carregaOps15();
   },
 
   propostas(){
@@ -856,6 +928,49 @@ const VIEWS = {
     $('conteudo').innerHTML = topo('Versões','Registro do que mudou em cada entrega.','') + `<div class="painel versoes">${CHANGELOG.map(v => `<h3>v${esc(v.v)} <small style="font:400 13px var(--texto);color:var(--suave)">${esc(v.data)}</small></h3><ul>${v.itens.map(i => `<li>${esc(i)}</li>`).join('')}</ul>`).join('')}</div>`;
   }
 };
+
+/* ----- painel: gráficos em SVG puro (sem biblioteca) ----- */
+function graficosSituacao(){
+  const g = porSituacao(S.propostas), total = g.reduce((a,x) => a + x.n, 0);
+  if(!total) return '';
+  const R = 54, C = 2*Math.PI*R; let ac = 0;
+  const arcos = g.filter(x => x.n).map(x => { const len = x.n/total*C, s = `<circle r="${R}" cx="80" cy="80" fill="none" stroke="${COR_STATUS[x.status]}" stroke-width="26" stroke-dasharray="${len.toFixed(2)} ${(C-len).toFixed(2)}" stroke-dashoffset="${(-ac).toFixed(2)}"><title>${esc(STATUS[x.status])}: ${x.n} (${Math.round(x.n/total*100)}%)</title></circle>`; ac += len; return s; }).join('');
+  const maxV = Math.max(1, ...g.map(x => x.mensal + x.pontual));
+  return `<div class="duas graficos">
+    <div class="painel"><h2>Propostas por situação</h2><div class="rosca">
+      <svg viewBox="0 0 160 160" role="img" aria-label="Propostas por situação: ${esc(g.filter(x=>x.n).map(x => STATUS[x.status] + ' ' + x.n).join(', '))}"><g transform="rotate(-90 80 80)">${arcos}</g><text x="80" y="78" text-anchor="middle" class="rosca-n">${total}</text><text x="80" y="96" text-anchor="middle" class="rosca-t">propostas</text></svg>
+      <table class="legenda"><tbody>${g.map(x => `<tr><td><i style="background:${COR_STATUS[x.status]}"></i>${esc(STATUS[x.status])}</td><td class="num"><b>${x.n}</b></td><td class="num">${total ? Math.round(x.n/total*100) : 0}%</td><td><button class="btn mini" data-act="filtrar" data-status="${x.status}" ${x.n?'':'disabled'}>ver</button></td></tr>`).join('')}</tbody></table></div></div>
+    <div class="painel"><h2>Valor em cada situação</h2>${g.map(x => `<div class="vbar"><div class="vbar-r"><span><i style="background:${COR_STATUS[x.status]}"></i>${esc(STATUS[x.status])}</span><span><b>${brl(x.mensal)}</b>/mês${x.pontual ? ' + ' + brl(x.pontual) + ' pontual' : ''}</span></div>
+      <div class="barra dupla" title="${esc(STATUS[x.status])}: ${brl(x.mensal)} por mês${x.pontual ? ' e ' + brl(x.pontual) + ' pontual' : ''}"><i style="width:${(x.mensal/maxV*100).toFixed(1)}%;background:${COR_STATUS[x.status]}"></i><i class="pont" style="width:${(x.pontual/maxV*100).toFixed(1)}%;background:${COR_STATUS[x.status]}"></i></div></div>`).join('')}
+      <p class="dica" style="margin:10px 0 0">Barra cheia: honorário mensal. Barra hachurada: serviços pontuais.</p></div></div>`;
+}
+function graficoOps(dias){
+  const W = 760, H = 210, m = { e:28, d:6, t:14, b:34 }, lw = (W - m.e - m.d) / dias.length, max = Math.max(4, ...dias.map(d => d.total)), esc_y = v => (H - m.b) - v/max*(H - m.t - m.b);
+  const grade = [0, .5, 1].map(f => { const v = Math.round(max*f), y = esc_y(v); return `<line x1="${m.e}" x2="${W-m.d}" y1="${y}" y2="${y}" class="g-l"/><text x="${m.e-5}" y="${y+3}" text-anchor="end" class="g-e">${v}</text>`; }).join('');
+  const cols = dias.map((d,i) => { let y = H - m.b; const x = m.e + i*lw + lw*0.18, w = lw*0.64;
+    const seg = OPS.map(([k, rot, cor]) => { if(!d[k]) return ''; const h = d[k]/max*(H - m.t - m.b); y -= h; return `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}" fill="${cor}"><title>${dataBR(d.dia)} — ${rot}: ${d[k]}</title></rect>`; }).join('');
+    return seg + (d.total ? `<text x="${(x+w/2).toFixed(1)}" y="${(y-4).toFixed(1)}" text-anchor="middle" class="g-v">${d.total}</text>` : '') + `<text x="${(x+w/2).toFixed(1)}" y="${H-m.b+14}" text-anchor="middle" class="g-e">${d.dia.slice(8)}/${d.dia.slice(5,7)}</text>`; }).join('');
+  const tot = OPS.map(([k, rot, cor]) => [rot, cor, dias.reduce((a,d) => a + d[k], 0)]);
+  return `<svg viewBox="0 0 ${W} ${H}" class="g-ops" role="img" aria-label="Operações por dia nos últimos ${dias.length} dias. ${esc(tot.filter(t => t[2]).map(t => t[0] + ': ' + t[2]).join(', ') || 'Nenhuma operação')}">${grade}${cols}</svg>
+    <div class="g-leg">${tot.map(t => `<span><i style="background:${t[1]}"></i>${esc(t[0])} <b>${t[2]}</b></span>`).join('')}</div>`;
+}
+async function carregaOps15(){
+  const el = $('ops15'); if(!el) return;
+  const r = await tenta(() => DB.atividades(15)); if(!r || S.view!=='painel' || !$('ops15')) return;
+  S.ops15 = r.lista; const dias = opsPorDia(r.lista, hojeISO(), 15), n = r.lista.length;
+  $('ops15').innerHTML = graficoOps(dias) + (r.completo ? '' : '<p class="dica">Mostrando só as etapas principais. Para ver também envios, acessos do cliente e alterações, rode no banco a migração 08_migracao_v1_5_0_atividades.sql.</p>') +
+    (n ? `<ul class="linha-tempo feed" id="feed15">${r.lista.slice(0,12).map(feedHTML).join('')}</ul>${n>12 ? `<button class="btn mini" data-act="feedTudo" style="margin-top:8px">Mostrar as ${n} operações</button>` : ''}` : '<div class="vazio">Nenhuma operação nos últimos 15 dias.</div>');
+}
+function feedHTML(x){ return linhaTempoHTML(x).replace('</span> ', `</span> <button class="elo" data-act="doc" data-id="${esc(x.proposta_id)}">${esc(numeroFmt(x))} · ${esc(x.cliente_nome)}</button> — `); }
+const ICO_RELOGIO = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 7v5l3.5 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+async function dlgAtividades(id){
+  const p = S.propostas.find(x => x.id===id); if(!p) return;
+  $('dlg').classList.add('largo');
+  $('dlg').innerHTML = `<h2>Atividades — Proposta ${esc(numeroFmt(p))}</h2><p style="margin:-8px 0 12px">${esc(p.cliente_nome)} · ${selo(p.status)}</p><ul class="linha-tempo" id="dlgHist"><li>Carregando…</li></ul>
+    <div class="barra-salvar" style="margin-top:16px"><button class="btn" data-act="fecharDlg">Fechar</button><button class="btn primario" data-act="doc" data-id="${p.id}">Abrir a proposta</button></div>`;
+  $('dlg').showModal();
+  const lt = await tenta(() => DB.linhaDoTempo(p.id)); const el = $('dlgHist'); if(el && lt) el.innerHTML = lt.map(linhaTempoHTML).join('') || '<li>Sem registros.</li>';
+}
 
 /* ----- controle, histórico e link do cliente ----- */
 function linhaTempoHTML(x){
@@ -978,7 +1093,7 @@ function tabelaPropostas(arr, compacta){
     const venc = p.validade && p.validade < hoje && (p.status==='enviada' || p.status==='negociacao');
     return `<tr><td>${esc(numeroFmt(p))}</td><td><b>${esc(p.cliente_nome)}</b><br><small>${esc(p.contato || 'sem contato')}</small></td><td class="num">${+p.total_mensal ? brl(p.total_mensal) : '—'}</td><td class="num">${+p.total_pontual ? brl(p.total_pontual) : '—'}</td>
     <td>${compacta ? selo(p.status) : `<select data-status="${p.id}" ${p.assinada_em ? 'disabled title="Assinada pelo cliente"' : ''} aria-label="Status da proposta ${esc(numeroFmt(p))}">${STATUS_ORDEM.map(s => `<option value="${s}" ${p.status===s?'selected':''}>${esc(STATUS[s])}</option>`).join('')}</select>`}</td>
-    ${compacta ? '' : `<td><small>Criada ${esc(dataHora(p.criado_em) || dataBR(p.data_proposta))}</small>${etapaAtual(p) ? '<br>' + esc(etapaAtual(p)[0]) + ' ' + esc(dataHora(etapaAtual(p)[1])) : ''}</td><td class="${venc?'vencida':''}">${p.validade ? dataBR(p.validade) + (venc ? ' (vencida)' : '') : '—'}</td>`}
+    ${compacta ? '' : `<td><div class="ctrl"><button class="ico" data-act="atividades" data-id="${p.id}" title="Ver todas as atividades desta proposta" aria-label="Ver todas as atividades da proposta ${esc(numeroFmt(p))}">${ICO_RELOGIO}</button><span><small>Criada ${esc(dataHora(p.criado_em) || dataBR(p.data_proposta))}</small>${etapaAtual(p) ? '<br>' + esc(etapaAtual(p)[0]) + ' ' + esc(dataHora(etapaAtual(p)[1])) : ''}</span></div></td><td class="${venc?'vencida':''}">${p.validade ? dataBR(p.validade) + (venc ? ' (vencida)' : '') : '—'}</td>`}
     <td class="acoes-linha"><button class="btn mini" data-act="doc" data-id="${p.id}">Documento</button>${compacta ? '' : ` <button class="btn mini" data-act="editar" data-id="${p.id}" ${p.assinada_em || p.status==='aprovada'?'disabled title="Proposta aprovada ou assinada fica congelada."':''}>Editar</button> <button class="btn mini" data-act="duplicar" data-id="${p.id}">Duplicar</button> <button class="btn mini" data-act="excluirProposta" data-id="${p.id}" ${p.assinada_em ? 'disabled title="Proposta assinada pelo cliente não pode ser excluída."' : ''}>Excluir</button>`}</td></tr>`; }).join('')}</tbody></table></div>`;
 }
 function listarPropostas(){
@@ -1171,7 +1286,10 @@ const ACOES = {
   nova(el){ S.F = novaF(el.dataset.cliente); S.errosForm = []; S.docPrevia = null; ir('form'); },
   editar(el){ const p = S.propostas.find(x => x.id===el.dataset.id); if(!p || p.status==='aprovada') return; S.F = copiaF(p); S.docPrevia = null; ir('form'); },
   duplicar(el){ const p = S.propostas.find(x => x.id===el.dataset.id); if(!p) return; S.F = copiaF(p, true); S.docPrevia = null; ir('form'); toast('Cópia aberta como nova proposta. Revise e salve.'); },
-  doc(el){ S.docPrevia = null; S.docId = el.dataset.id; ir('documento'); },
+  doc(el){ if($('dlg').open) $('dlg').close(); S.docPrevia = null; S.docId = el.dataset.id; ir('documento'); },
+  atividades(el){ dlgAtividades(el.dataset.id); },
+  filtrar(el){ S.filtroStatus = el.dataset.status; S.busca = ''; ir('propostas'); },
+  feedTudo(el){ $('feed15').innerHTML = (S.ops15 || []).map(feedHTML).join(''); el.remove(); },
   irPropostas(){ ir('propostas'); },
   previa(){ const F = leF(); const er = validarProposta(F); if(er.length){ toast(er[0], true); return; } S.docPrevia = JSON.parse(JSON.stringify(F)); ir('documento'); },
   voltarForm(){ S.docPrevia = null; ir('form'); },
@@ -1373,6 +1491,8 @@ async function telaCliente(){
 function ajustaFolha(){ const a = document.getElementById('docArea'); if(!a) return; const z = Math.min(1, (a.clientWidth - 16) / 794); document.documentElement.style.setProperty('--zf', z > 0 ? z.toFixed(3) : 1); if(z < 1) a.style.padding = '8px'; else a.style.padding = ''; }
 window.addEventListener('resize', ajustaFolha);
 new MutationObserver(ajustaFolha).observe(document.getElementById('raiz'), { childList:true, subtree:true });
+
+document.getElementById('dlg').addEventListener('close', () => document.getElementById('dlg').classList.remove('largo'));
 
 /* ===================== INÍCIO ===================== */
 function telaLogin(msg){
