@@ -567,10 +567,15 @@ function porSituacao(props){
 const CFG = { SUPABASE_URL:'https://yeujqjtjqtegsnzwwazb.supabase.co', SUPABASE_ANON_KEY:'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlldWpxanRqcXRlZ3Nuend3YXpiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1NDE0OTksImV4cCI6MjEwMTExNzQ5OX0.5p1_wJ_aApJpRrN6tFu8qmAytK5FMXWt1soCubpzqao' };
 const SUPABASE_JS = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js';
 
-const APP_VERSION = '1.6.3';
+const APP_VERSION = '1.6.4';
 const LOGO_EMAIL = 'https://arteconartescontabeis-design.github.io/propostas/logo_artecon.png';
 const PORTAL_URL = 'https://arteconartescontabeis-design.github.io/portal/';
 const CHANGELOG = [
+  { v:'1.6.4', data:'21/09/2026', itens:[
+    'Tela da proposta: os botões de envio saíram do painel Assinaturas e foram para o topo, ao lado de Editar e Duplicar — “Enviar por e-mail”, “Enviar por WhatsApp” e “Assinar pelo escritório” (quando falta). Depois de todos assinarem, viram “Reenviar via por e-mail” e “Via por WhatsApp”.',
+    'Envio por e-mail no topo manda para todos os signatários que ainda não assinaram; o WhatsApp abre direto quando há uma pessoa só, ou pergunta para quem quando há mais de uma. Sem signatário cadastrado, o botão abre o cadastro.',
+    'No painel Assinaturas continuam as ações de cada pessoa (reenviar, cancelar link, editar, remover).'
+  ]},
   { v:'1.6.3', data:'21/09/2026', itens:[
     'Lista de propostas: novo botão “Assinaturas”, que abre a proposta direto no painel de quem assina e do envio por e-mail/WhatsApp (o painel fica na tela da proposta, não no formulário de edição).',
     'Formulário de edição: aviso de onde ficam os signatários e o envio ao cliente.',
@@ -927,7 +932,7 @@ const VIEWS = {
     const venc = p.validade && p.validade<hojeISO() && (p.status==='enviada'||p.status==='negociacao');
     const etapas = [['Criada', p.criado_em], ['Enviada', p.enviada_em], ['Clientes assinaram', p.clientes_assinaram_em], ['Escritório assinou', p.escritorio_assinou_em], ['Aprovada', p.aprovada_em], ['Perdida', p.status==='perdida' ? p.perdida_em : null], [p.escritorio_assinou_em ? 'Assinada por todos' : 'Assinada pelo cliente', p.assinada_em], ['Via assinada enviada', p.via_enviada_em]].filter(x => x[1]);
     $('conteudo').innerHTML = topo(previa ? 'Prévia do documento' : 'Proposta ' + numeroFmt(p), p.cliente_nome,
-      `<button class="btn" data-act="${previa?'voltarForm':'irPropostas'}">Voltar</button>${previa ? '' : `<button class="btn" id="btnEditar" data-act="editar" data-id="${p.id}" ${travada || p.escritorio_assinou_em || p.clientes_assinaram_em ? 'disabled title="Proposta com assinatura não pode ser alterada. Para mudar, use Duplicar."' : p.status==='aprovada'?'disabled title="Proposta aprovada fica congelada. Volte o status para editar."':''}>Editar</button><button class="btn" data-act="duplicar" data-id="${p.id}">Duplicar</button>`}<button class="btn" data-act="word">Baixar Word</button><button class="btn primario" data-act="imprimir">Imprimir / salvar PDF</button>`) +
+      `<button class="btn" data-act="${previa?'voltarForm':'irPropostas'}">Voltar</button>${previa ? '' : `<button class="btn" id="btnEditar" data-act="editar" data-id="${p.id}" ${travada || p.escritorio_assinou_em || p.clientes_assinaram_em ? 'disabled title="Proposta com assinatura não pode ser alterada. Para mudar, use Duplicar."' : p.status==='aprovada'?'disabled title="Proposta aprovada fica congelada. Volte o status para editar."':''}>Editar</button><button class="btn" data-act="duplicar" data-id="${p.id}">Duplicar</button><span id="topoEnvio" style="display:contents"></span>`}<button class="btn" data-act="word">Baixar Word</button><button class="btn primario" data-act="imprimir">Imprimir / salvar PDF</button>`) +
       (previa ? '' : `<div class="painel"><h2>Controle</h2>
         <div class="filtros" style="align-items:center;margin:0 0 10px">${selo(p.status)}${travada ? ` <span class="selo aprovada">${p.escritorio_assinou_em ? 'Assinada por todos' : 'Assinada pelo cliente'}</span>` : ''} <span>Mensal <b>${brl(p.total_mensal)}</b></span> <span>Pontual <b>${brl(p.total_pontual)}</b></span> <span>Validade <b class="${venc ? 'vencida':''}">${p.validade ? dataBR(p.validade) : '—'}</b></span></div>
         <div class="etapas">${etapas.map(x => `<div><span>${esc(x[0])}</span><b>${esc(dataHora(x[1]))}</b></div>`).join('')}</div>
@@ -940,7 +945,7 @@ const VIEWS = {
       if(S.view!=='documento' || S.docId!==p.id) return;
       S.doc = { sigs, links, ass, fila }; S.filaAtiva = fila !== null;
       $('hist').innerHTML = lt.map(linhaTempoHTML).join('') || '<li>Sem registros.</li>';
-      desenhaAssinaturas(p);
+      desenhaAssinaturas(p); desenhaTopoEnvio(p);
       if(ass.length && $('btnEditar')){ $('btnEditar').disabled = true; $('btnEditar').title = 'Proposta com assinatura não pode ser alterada. Para mudar, use Duplicar.'; }
       if(S._rolarAss){ S._rolarAss = false; const a = $('assinaturas'); if(a) a.closest('.painel').scrollIntoView({ behavior:'smooth', block:'start' }); }
       if(ass.length) $('docArea').innerHTML = docHTML(p, ass, { fotos:true });
@@ -1113,8 +1118,7 @@ function desenhaAssinaturas(p){
       <td>${esc_ass ? `<span class="selo aprovada">Assinou</span> ${esc(dataHora(esc_ass.assinado_em))} · ${esc(esc_ass.nome)} · código ${esc(esc_ass.codigo)}` : legado.length && fim ? '<span class="selo">Não se aplica</span> <small>proposta fechada na v1.3</small>' : '<span class="selo negociacao">Pendente</span> pode assinar antes ou depois dos clientes'}</td>
       <td class="acoes-linha">${!esc_ass && !fim && aberta ? (diretor ? '<button class="btn mini primario" data-act="escAssinar">Assinar pelo escritório</button>' : '<small>só o diretor assina</small>') : ''}</td></tr></tbody></table></div>
     <div class="filtros" style="margin:14px 0 0;align-items:center">
-      ${!fim && aberta ? `<button class="btn" data-act="sigEditar">Adicionar signatário</button>${pendEmail.length ? `<button class="btn primario" data-act="sigEnviarTodos">Enviar por e-mail a quem falta (${pendEmail.length})</button>` : ''}` : ''}
-      ${fim && sigs.length ? `<button class="btn ${p.via_enviada_em ? '' : 'primario'}" data-act="viaTodos">${p.via_enviada_em ? 'Reenviar a via assinada a todos' : 'Enviar a via assinada a todos'}</button>` : ''}
+      ${!fim && aberta ? `<button class="btn" data-act="sigEditar">Adicionar signatário</button>` : ''}
       <button class="btn" data-act="copiarLink" title="Abre o app inteiro e pede login: só para quem é do escritório">Copiar link interno</button>
       ${ass.some(a => a.foto) ? '<label class="marcar" style="padding:0"><input type="checkbox" id="incFotos" checked> Imprimir as fotos no comprovante</label>' : ''}
     </div>
@@ -1131,6 +1135,18 @@ function filaHTML(p){
   return `<details class="fila" ${erro.length ? 'open' : ''}><summary>E-mails automáticos: ${f.filter(x => x.enviado_em).length} enviado${f.filter(x => x.enviado_em).length===1?'':'s'}${pend.length ? `, <b>${pend.length} na fila</b>` : ''}${erro.length ? ` — <span class="vencida">${erro.length} com erro</span>` : ''}</summary>
     <table class="lista"><tbody>${f.map(x => `<tr><td>${esc(ROT_FILA[x.tipo] || x.tipo)}</td><td><small>${esc(x.destinatario)}</small></td><td>${x.enviado_em ? 'enviado em ' + esc(dataHora(x.enviado_em)) : x.cancelado_em ? '<small>dispensado: ' + esc(x.ultimo_erro || '') + '</small>' : x.ultimo_erro ? `<span class="vencida">erro na ${x.tentativas}ª tentativa:</span> <small>${esc(x.ultimo_erro)}</small><br><small>nova tentativa ${x.tentativas>=6 ? 'esgotada: envie pelo botão da via' : 'às ' + esc(dataHora(x.proxima_tentativa_em).slice(-5))}</small>` : 'na fila'}</td></tr>`).join('')}</tbody></table>
     ${pend.length ? '<button class="btn mini" data-act="filaAgora" style="margin-top:8px">Processar a fila agora</button>' : ''}</details>`;
+}
+const ICO_MAIL = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" style="vertical-align:-3px;margin-right:4px"><rect x="3" y="5" width="18" height="14" rx="1.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3.5 6l8.5 7 8.5-7" fill="none" stroke="currentColor" stroke-width="2"/></svg>';
+const ICO_ZAP = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" style="vertical-align:-3px;margin-right:4px"><path d="M12 3a9 9 0 0 0-7.8 13.5L3 21l4.6-1.2A9 9 0 1 0 12 3z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M9 8.5c.3 2.7 2.8 5.3 5.5 5.9l1.2-1.3-1.9-1-.9.8c-.9-.4-1.9-1.4-2.3-2.3l.8-.9-1-1.9z" fill="currentColor"/></svg>';
+function fmtCel(c){ return String(c||'').replace(/^(\d{2})(\d{4,5})(\d{4})$/,'($1) $2-$3'); }
+function desenhaTopoEnvio(p){
+  const el = $('topoEnvio'); if(!el || !MODO_NUVEM || S.docPrevia || !S.doc) return;
+  const fim = !!p.assinada_em, aberta = ['rascunho','enviada','negociacao'].includes(p.status);
+  if(!fim && !aberta){ el.innerHTML = ''; return; }
+  const escPend = !fim && !S.doc.ass.some(a => a.papel==='escritorio') && S.perfil==='diretor';
+  el.innerHTML = `<button class="btn primario" data-act="topoEmail" title="${fim ? 'Envia de novo a via assinada, só leitura, a cada signatário com e-mail' : 'Envia o link de assinatura a quem ainda não assinou'}">${ICO_MAIL}${fim ? 'Reenviar via por e-mail' : 'Enviar por e-mail'}</button>`
+    + `<button class="btn" data-act="topoZap" title="Abre a conversa do WhatsApp com a mensagem pronta">${ICO_ZAP}${fim ? 'Via por WhatsApp' : 'Enviar por WhatsApp'}</button>`
+    + (escPend ? '<button class="btn" data-act="escAssinar">Assinar pelo escritório</button>' : '');
 }
 function dlgSignatario(id){
   const p = S.propostas.find(x => x.id===S.docId); let s = id ? S.doc.sigs.find(x => x.id===id) : null;
@@ -1399,6 +1415,31 @@ const ACOES = {
     await tenta(async () => { await DB.salvarSignatario(s.id, { excluido_em:new Date().toISOString() }); await DB.recarregar(S.docId); toast('Signatário removido.'); VIEWS.documento(); }); },
   async sigCancelar(el){ if(!confirm('Cancelar o link desta pessoa? O endereço que ela recebeu deixa de funcionar.')) return;
     await tenta(async () => { await DB.revogarUm(el.dataset.id, 'assinatura'); toast('Link cancelado.'); VIEWS.documento(); }); },
+  async topoEmail(){ const p = S.propostas.find(x => x.id===S.docId); if(!p || !S.doc) return; const { sigs, ass, links } = S.doc;
+    if(!sigs.length){ toast('Cadastre antes quem vai assinar pelo cliente.', true); dlgSignatario(); return; }
+    if(p.assinada_em) return ACOES.viaTodos();
+    const pend = sigs.filter(s => !ass.some(a => a.signatario_id===s.id)), com = pend.filter(s => s.email), sem = pend.length - com.length;
+    if(!pend.length){ toast('Todos os signatários já assinaram.'); return; }
+    if(!com.length){ toast('Nenhum signatário que falta assinar tem e-mail cadastrado. Use o WhatsApp ou edite o signatário.', true); return; }
+    const ja = com.filter(s => links.some(l => l.signatario_id===s.id && l.tipo==='assinatura'));
+    if(ja.length && !confirm(`${ja.map(s => s.nome).join(', ')} já ${ja.length>1 ? 'receberam' : 'recebeu'} o link. Enviar de novo cancela o link anterior. Continuar?`)) return;
+    const falhas = []; let n = 0;
+    for(const s of com){ try{ await enviarLink(p, s, 'assinatura', 'email'); n++; }catch(e){ falhas.push(`${s.nome}: ${e.message}`); } }
+    await DB.recarregar(p.id).catch(() => {});
+    if(falhas.length) toast('Não enviado para ' + falhas.join(' | '), true);
+    else toast(`E-mail enviado a ${n} signatário${n===1?'':'s'}${sem ? `; ${sem} sem e-mail: use o WhatsApp` : ''}.`);
+    VIEWS.documento(); },
+  topoZap(){ const p = S.propostas.find(x => x.id===S.docId); if(!p || !S.doc) return; const { sigs, ass } = S.doc;
+    if(!sigs.length){ toast('Cadastre antes quem vai assinar pelo cliente.', true); dlgSignatario(); return; }
+    const fim = !!p.assinada_em, tipo = fim ? 'leitura' : 'assinatura', alvo = fim ? sigs : sigs.filter(s => !ass.some(a => a.signatario_id===s.id));
+    if(!alvo.length){ toast('Todos os signatários já assinaram.'); return; }
+    const com = alvo.filter(s => s.celular);
+    if(!com.length){ toast(`Nenhum signatário${fim ? '' : ' que falta assinar'} tem celular cadastrado. Edite o signatário no painel Assinaturas.`, true); return; }
+    if(com.length===1) return ACOES.sigEnviar({ dataset:{ id:com[0].id, tipo, canal:'whatsapp' } });
+    $('dlg').innerHTML = `<h2>${fim ? 'Via assinada por WhatsApp' : 'Enviar por WhatsApp'}</h2><p style="margin-top:-6px">Escolha para quem. Cada botão abre a conversa com a mensagem pronta.</p>
+      <table class="lista"><tbody>${com.map(s => `<tr><td><b>${esc(s.nome)}</b>${s.qualidade ? '<br><small>' + esc(s.qualidade) + '</small>' : ''}</td><td><small>${esc(fmtCel(s.celular))}</small></td><td class="acoes-linha"><button class="btn mini primario" data-act="sigEnviar" data-id="${s.id}" data-tipo="${tipo}" data-canal="whatsapp">${ICO_ZAP}WhatsApp</button></td></tr>`).join('')}</tbody></table>
+      <div class="barra-salvar" style="margin-top:14px"><button class="btn" data-act="fecharDlg">Fechar</button></div>`;
+    $('dlg').showModal(); },
   async sigEnviar(el){ const p = S.propostas.find(x => x.id===S.docId), s = S.doc.sigs.find(x => x.id===el.dataset.id); if(!p || !s) return;
     const { tipo, canal } = el.dataset, tinha = S.doc.links.some(l => l.signatario_id===s.id && l.tipo===tipo);
     if(tinha && tipo==='assinatura' && !confirm('Já existe um link enviado a esta pessoa. Enviar outro cancela o anterior. Continuar?')) return;
@@ -1407,6 +1448,7 @@ const ACOES = {
     const ok = await tenta(async () => { await enviarLink(p, s, tipo, canal, janela); await DB.recarregar(p.id); return true; });
     if(!ok && janela) janela.close();
     if(ok) toast(canal==='email' ? `E-mail enviado para ${s.email}.` : 'WhatsApp aberto com a mensagem pronta: confira o contato e envie.');
+    if($('dlg').open) $('dlg').close();
     VIEWS.documento(); },
   async sigEnviarTodos(){ const p = S.propostas.find(x => x.id===S.docId); if(!p) return; const falhas = []; let n = 0;
     const alvo = S.doc.sigs.filter(s => s.email && !S.doc.ass.some(a => a.signatario_id===s.id) && !S.doc.links.some(l => l.signatario_id===s.id && l.tipo==='assinatura'));
