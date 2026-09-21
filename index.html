@@ -567,10 +567,15 @@ function porSituacao(props){
 const CFG = { SUPABASE_URL:'https://yeujqjtjqtegsnzwwazb.supabase.co', SUPABASE_ANON_KEY:'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlldWpxanRqcXRlZ3Nuend3YXpiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1NDE0OTksImV4cCI6MjEwMTExNzQ5OX0.5p1_wJ_aApJpRrN6tFu8qmAytK5FMXWt1soCubpzqao' };
 const SUPABASE_JS = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js';
 
-const APP_VERSION = '1.6.2';
+const APP_VERSION = '1.6.3';
 const LOGO_EMAIL = 'https://arteconartescontabeis-design.github.io/propostas/logo_artecon.png';
 const PORTAL_URL = 'https://arteconartescontabeis-design.github.io/portal/';
 const CHANGELOG = [
+  { v:'1.6.3', data:'21/09/2026', itens:[
+    'Lista de propostas: novo botão “Assinaturas”, que abre a proposta direto no painel de quem assina e do envio por e-mail/WhatsApp (o painel fica na tela da proposta, não no formulário de edição).',
+    'Formulário de edição: aviso de onde ficam os signatários e o envio ao cliente.',
+    'Proposta que já tem alguma assinatura fica com o botão Editar desligado (o conteúdo assinado não pode mudar; para alterar, use Duplicar).'
+  ]},
   { v:'1.6.2', data:'21/09/2026', itens:[
     'E-mails: o botão (“Ler e assinar a proposta”, “Abrir a via assinada”) passou a ser montado em tabela, porque o Outlook para Windows ignorava o espaçamento e mostrava o botão como uma etiqueta pequena. A mesma correção entrou na função prop-email, dos e-mails automáticos.'
   ]},
@@ -884,7 +889,7 @@ const VIEWS = {
     const F = S.F, c = F.condicoes, edicao = !!F.id;
     const nomes = ativos(S.clientes).map(x => `<option value="${esc(x.nome)}">`).join('');
     $('conteudo').innerHTML = topo(edicao ? 'Editar proposta ' + numeroFmt(F) : 'Nova proposta','O documento é montado na estrutura dos modelos oficiais da Artecon.','<button class="btn" data-ir="propostas">Cancelar</button>') + `
-    <div id="errosForm"></div>
+    <div id="errosForm"></div>${MODO_NUVEM ? `<div class="chip">Quem assina e o envio ao cliente (e-mail ou WhatsApp) ficam na <b>tela da proposta</b>, no painel <b>Assinaturas</b>. ${edicao ? 'Salve as alterações e use esse painel.' : 'Salve a proposta primeiro.'}</div>` : ''}
     <div class="painel"><h2>Cliente</h2><div class="grade">
       <div class="campo"><label for="f_cliente">Cliente / empresa *</label><input type="text" id="f_cliente" data-f="cliente_nome" list="dlClientes" value="${esc(F.cliente_nome)}" placeholder="Razão social ou nome" autocomplete="off"><datalist id="dlClientes">${nomes}</datalist><span class="dica" id="dicaCliente"></span></div>
       <div class="campo"><label for="f_doc">CNPJ / CPF</label><input type="text" id="f_doc" data-f="cliente_documento" value="${esc(docFmt(F.cliente_documento))}" placeholder="00.000.000/0001-00"></div>
@@ -922,7 +927,7 @@ const VIEWS = {
     const venc = p.validade && p.validade<hojeISO() && (p.status==='enviada'||p.status==='negociacao');
     const etapas = [['Criada', p.criado_em], ['Enviada', p.enviada_em], ['Clientes assinaram', p.clientes_assinaram_em], ['Escritório assinou', p.escritorio_assinou_em], ['Aprovada', p.aprovada_em], ['Perdida', p.status==='perdida' ? p.perdida_em : null], [p.escritorio_assinou_em ? 'Assinada por todos' : 'Assinada pelo cliente', p.assinada_em], ['Via assinada enviada', p.via_enviada_em]].filter(x => x[1]);
     $('conteudo').innerHTML = topo(previa ? 'Prévia do documento' : 'Proposta ' + numeroFmt(p), p.cliente_nome,
-      `<button class="btn" data-act="${previa?'voltarForm':'irPropostas'}">Voltar</button>${previa ? '' : `<button class="btn" data-act="editar" data-id="${p.id}" ${travada ? 'disabled title="Proposta assinada pelo cliente não pode ser alterada."' : p.status==='aprovada'?'disabled title="Proposta aprovada fica congelada. Volte o status para editar."':''}>Editar</button><button class="btn" data-act="duplicar" data-id="${p.id}">Duplicar</button>`}<button class="btn" data-act="word">Baixar Word</button><button class="btn primario" data-act="imprimir">Imprimir / salvar PDF</button>`) +
+      `<button class="btn" data-act="${previa?'voltarForm':'irPropostas'}">Voltar</button>${previa ? '' : `<button class="btn" id="btnEditar" data-act="editar" data-id="${p.id}" ${travada || p.escritorio_assinou_em || p.clientes_assinaram_em ? 'disabled title="Proposta com assinatura não pode ser alterada. Para mudar, use Duplicar."' : p.status==='aprovada'?'disabled title="Proposta aprovada fica congelada. Volte o status para editar."':''}>Editar</button><button class="btn" data-act="duplicar" data-id="${p.id}">Duplicar</button>`}<button class="btn" data-act="word">Baixar Word</button><button class="btn primario" data-act="imprimir">Imprimir / salvar PDF</button>`) +
       (previa ? '' : `<div class="painel"><h2>Controle</h2>
         <div class="filtros" style="align-items:center;margin:0 0 10px">${selo(p.status)}${travada ? ` <span class="selo aprovada">${p.escritorio_assinou_em ? 'Assinada por todos' : 'Assinada pelo cliente'}</span>` : ''} <span>Mensal <b>${brl(p.total_mensal)}</b></span> <span>Pontual <b>${brl(p.total_pontual)}</b></span> <span>Validade <b class="${venc ? 'vencida':''}">${p.validade ? dataBR(p.validade) : '—'}</b></span></div>
         <div class="etapas">${etapas.map(x => `<div><span>${esc(x[0])}</span><b>${esc(dataHora(x[1]))}</b></div>`).join('')}</div>
@@ -936,6 +941,8 @@ const VIEWS = {
       S.doc = { sigs, links, ass, fila }; S.filaAtiva = fila !== null;
       $('hist').innerHTML = lt.map(linhaTempoHTML).join('') || '<li>Sem registros.</li>';
       desenhaAssinaturas(p);
+      if(ass.length && $('btnEditar')){ $('btnEditar').disabled = true; $('btnEditar').title = 'Proposta com assinatura não pode ser alterada. Para mudar, use Duplicar.'; }
+      if(S._rolarAss){ S._rolarAss = false; const a = $('assinaturas'); if(a) a.closest('.painel').scrollIntoView({ behavior:'smooth', block:'start' }); }
       if(ass.length) $('docArea').innerHTML = docHTML(p, ass, { fotos:true });
     });
   },
@@ -1164,7 +1171,7 @@ function tabelaPropostas(arr, compacta){
     return `<tr><td>${esc(numeroFmt(p))}</td><td><b>${esc(p.cliente_nome)}</b><br><small>${esc(p.contato || 'sem contato')}</small></td><td class="num">${+p.total_mensal ? brl(p.total_mensal) : '—'}</td><td class="num">${+p.total_pontual ? brl(p.total_pontual) : '—'}</td>
     <td>${compacta ? selo(p.status) : `<select data-status="${p.id}" ${p.assinada_em ? 'disabled title="Assinada pelo cliente"' : ''} aria-label="Status da proposta ${esc(numeroFmt(p))}">${STATUS_ORDEM.map(s => `<option value="${s}" ${p.status===s?'selected':''}>${esc(STATUS[s])}</option>`).join('')}</select>`}</td>
     ${compacta ? '' : `<td><div class="ctrl"><button class="ico" data-act="atividades" data-id="${p.id}" title="Ver todas as atividades desta proposta" aria-label="Ver todas as atividades da proposta ${esc(numeroFmt(p))}">${ICO_RELOGIO}</button><span><small>Criada ${esc(dataHora(p.criado_em) || dataBR(p.data_proposta))}</small>${etapaAtual(p) ? '<br>' + esc(etapaAtual(p)[0]) + ' ' + esc(dataHora(etapaAtual(p)[1])) : ''}</span></div></td><td class="${venc?'vencida':''}">${p.validade ? dataBR(p.validade) + (venc ? ' (vencida)' : '') : '—'}</td>`}
-    <td class="acoes-linha"><button class="btn mini" data-act="doc" data-id="${p.id}">Documento</button>${compacta ? '' : ` <button class="btn mini" data-act="editar" data-id="${p.id}" ${p.assinada_em || p.status==='aprovada'?'disabled title="Proposta aprovada ou assinada fica congelada."':''}>Editar</button> <button class="btn mini" data-act="duplicar" data-id="${p.id}">Duplicar</button> <button class="btn mini" data-act="excluirProposta" data-id="${p.id}" ${p.assinada_em ? 'disabled title="Proposta assinada pelo cliente não pode ser excluída."' : ''}>Excluir</button>`}</td></tr>`; }).join('')}</tbody></table></div>`;
+    <td class="acoes-linha"><button class="btn mini" data-act="doc" data-id="${p.id}">Documento</button>${compacta || !MODO_NUVEM ? '' : ` <button class="btn mini" data-act="docAss" data-id="${p.id}" title="Quem assina e envio por e-mail/WhatsApp">Assinaturas</button>`}${compacta ? '' : ` <button class="btn mini" data-act="editar" data-id="${p.id}" ${p.assinada_em || p.escritorio_assinou_em || p.clientes_assinaram_em || p.status==='aprovada'?'disabled title="Proposta aprovada ou com assinatura não pode ser alterada. Para mudar, use Duplicar."':''}>Editar</button> <button class="btn mini" data-act="duplicar" data-id="${p.id}">Duplicar</button> <button class="btn mini" data-act="excluirProposta" data-id="${p.id}" ${p.assinada_em ? 'disabled title="Proposta assinada pelo cliente não pode ser excluída."' : ''}>Excluir</button>`}</td></tr>`; }).join('')}</tbody></table></div>`;
 }
 function listarPropostas(){
   const q = S.busca.trim().toLowerCase(), qd = soDoc(q);
@@ -1357,6 +1364,7 @@ const ACOES = {
   editar(el){ const p = S.propostas.find(x => x.id===el.dataset.id); if(!p || p.status==='aprovada') return; S.F = copiaF(p); S.docPrevia = null; ir('form'); },
   duplicar(el){ const p = S.propostas.find(x => x.id===el.dataset.id); if(!p) return; S.F = copiaF(p, true); S.docPrevia = null; ir('form'); toast('Cópia aberta como nova proposta. Revise e salve.'); },
   doc(el){ if($('dlg').open) $('dlg').close(); S.docPrevia = null; S.docId = el.dataset.id; ir('documento'); },
+  docAss(el){ S._rolarAss = true; ACOES.doc(el); },
   atividades(el){ dlgAtividades(el.dataset.id); },
   filtrar(el){ S.filtroStatus = el.dataset.status; S.filtroExtra = null; S.busca = ''; ir('propostas'); },
   feedTudo(){ S.feedTudo = true; desenhaOps15(); },
