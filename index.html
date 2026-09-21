@@ -140,6 +140,15 @@ dialog h2{font:700 20px var(--titulo);margin:0 0 16px;color:var(--cinza)}
 .cli-aceite h2{font:700 22px var(--titulo);margin:0 0 10px;color:var(--cinza)}
 .comprovante{break-before:page;page-break-before:always;padding-top:2mm}
 .comprovante table{width:100%;border-collapse:collapse;margin:0 0 5mm}
+.comprovante .ass-bloco{break-inside:avoid;margin-bottom:5mm}
+.comprovante h4{font:700 10.5pt Arial,sans-serif;margin:0 0 2mm;padding:1.5mm 2.5mm;background:#4F4C4D;color:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.comprovante .ass-foto{max-width:80mm;max-height:70mm;display:block;border:.2mm solid #999}
+.foto-box{border:1px solid var(--linha);border-left:4px solid var(--ciano);padding:12px 14px;margin-top:14px}
+.foto-box p{margin:4px 0 10px}
+.foto-box img{max-width:260px;max-height:220px;margin-top:10px;border:1px solid var(--linha);display:block}
+.privacidade{margin-top:14px;border:1px solid var(--linha);padding:10px 14px;font-size:13px;color:var(--suave)}
+.privacidade summary{cursor:pointer;font-weight:700;color:var(--cinza)}
+.privacidade p{margin:8px 0 0}
 table.miolo .comprovante th,table.miolo .comprovante td{border:.2mm solid #999;padding:1.6mm 2.5mm;text-align:left;vertical-align:top;font-size:10pt}
 table.miolo .comprovante th{width:48mm;background:#f2f4f5;font-weight:700}
 .comprovante .hash{font-family:Consolas,'Courier New',monospace;font-size:8.5pt;word-break:break-all}
@@ -155,6 +164,7 @@ table.miolo .comprovante th{width:48mm;background:#f2f4f5;font-weight:700}
 .doc-area{background:#e9eef0;padding:24px;overflow-x:auto}
 .folha{width:210mm;background:#fff;margin:0 auto 22px;box-shadow:0 2px 14px rgba(47,45,46,.18);color:#000;font:12pt/1.15 Arial,'Liberation Sans',Helvetica,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 /* capa = arte do modelo oficial (imagem) + textos nas posições medidas no .docx */
+.doc-area .folha{zoom:var(--zf,1)}
 .capa{height:297mm;position:relative;overflow:hidden;break-after:page;page-break-after:always;z-index:3;background:#fff}
 .capa>img{position:absolute;inset:0;width:210mm;height:297mm;display:block}
 .capa div{position:absolute;white-space:nowrap}
@@ -202,6 +212,7 @@ table.miolo td{padding:0}
   .principal{padding:0}
   .doc-area{background:#fff;padding:0;overflow:visible}
   .folha{box-shadow:none;margin:0}
+  .doc-area .folha{zoom:1}
   .pe-doc img{position:fixed;left:0;bottom:0;z-index:1}
 }
 </style>
@@ -454,9 +465,11 @@ function descreveAlteracao(det){
   return out;
 }
 function etapaAtual(p){
-  if(p.assinada_em) return ['Assinada pelo cliente', p.assinada_em];
+  if(p.assinada_em) return [p.escritorio_assinou_em ? 'Assinada por todos' : 'Assinada pelo cliente', p.assinada_em];
   if(p.status==='aprovada' && p.aprovada_em) return ['Aprovada', p.aprovada_em];
   if(p.status==='perdida' && p.perdida_em) return ['Perdida', p.perdida_em];
+  if(p.clientes_assinaram_em && !p.escritorio_assinou_em) return ['Clientes assinaram — falta o escritório', p.clientes_assinaram_em];
+  if(p.escritorio_assinou_em) return ['Escritório assinou — faltam clientes', p.escritorio_assinou_em];
   if((p.status==='enviada' || p.status==='negociacao') && p.enviada_em) return [p.status==='negociacao' ? 'Enviada (em negociação)' : 'Enviada', p.enviada_em];
   return null;
 }
@@ -472,9 +485,18 @@ function etapaAtual(p){
 const CFG = { SUPABASE_URL:'https://yeujqjtjqtegsnzwwazb.supabase.co', SUPABASE_ANON_KEY:'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlldWpxanRqcXRlZ3Nuend3YXpiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1NDE0OTksImV4cCI6MjEwMTExNzQ5OX0.5p1_wJ_aApJpRrN6tFu8qmAytK5FMXWt1soCubpzqao' };
 const SUPABASE_JS = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js';
 
-const APP_VERSION = '1.3.1';
+const APP_VERSION = '1.4.0';
 const PORTAL_URL = 'https://arteconartescontabeis-design.github.io/portal/';
 const CHANGELOG = [
+  { v:'1.4.0', data:'21/09/2026', itens:[
+    'Signatários: a proposta pode ter uma ou mais pessoas para assinar, cada uma com o próprio link. O envio é por e-mail (direto pelo sistema, sem o endereço aparecer na tela) ou por WhatsApp (abre a conversa do cliente com a mensagem pronta).',
+    'Assinatura do escritório: obrigatória, feita pelo diretor logado, antes ou depois dos clientes. A proposta só vira Aprovada quando todos os signatários e o escritório assinarem.',
+    'O link de cada pessoa é cancelado no instante em que ela assina. Depois da primeira assinatura o conteúdo congela (para mudar, duplique a proposta).',
+    'Via assinada: quando todos assinam, cada signatário recebe por e-mail um link só de leitura, válido por 30 dias, com o comprovante de todas as assinaturas para imprimir. Há botão de reenvio por e-mail ou WhatsApp.',
+    'Foto com documento: opção por proposta. Quando ligada, o cliente só assina depois de tirar a foto; ela fica guardada com hash e aparece no comprovante do escritório (com opção de imprimir sem as fotos). A via do cliente mostra só que a foto foi registrada.',
+    'LGPD: aviso de privacidade na página do cliente (dados do controlador, finalidade, guarda e contato, configuráveis em Escritório) e evidências completas — CPF, IP, foto — visíveis só para o diretor; os demais veem os dados mascarados.',
+    'Painel: pendências de propostas aguardando a assinatura do escritório e de vias assinadas ainda não enviadas.'
+  ]},
   { v:'1.3.1', data:'21/09/2026', itens:[
     'O botão “Copiar link interno” voltou a aparecer em todas as propostas, inclusive aprovadas, perdidas e assinadas (na v1.3.0 ele sumia junto com o link do cliente).',
     'Proposta aprovada ou perdida sem assinatura ganhou o botão “Reabrir como Enviada”, para poder gerar o link do cliente sem sair da tela.'
@@ -584,9 +606,7 @@ const Local = {
   async historico(id){ return this.db.historico.filter(h => h.proposta_id===id).sort((a,b) => a.criado_em < b.criado_em ? -1 : 1); },
   async salvarEscritorio(e){ this.db.tenant.escritorio = e; this.grava(); },
   async linhaDoTempo(id){ return (await this.historico(id)).map(h => ({ quando:h.criado_em, tipo:h.de ? 'status' : 'criada', quem:h.usuario_email, detalhe:{ de:h.de, para:h.para } })); },
-  async linkAtivo(){ return null; }, async assinatura(){ return null; },
-  async criarLink(){ throw new Error('O link do cliente e a assinatura só funcionam com o app ligado ao banco (modo local é só para teste).'); },
-  async revogarLink(){ return 0; },
+  async signatarios(){ return []; }, async linksDe(){ return []; }, async assinaturas(){ return []; },
   async sair(){}
 };
 
@@ -630,11 +650,19 @@ const Nuvem = {
   async alterar(tab, id, patch){ const { data, error } = await this.sb.from(TAB[tab]).update(patch).eq('id', id).select().single(); if(error) throw this.erro(error); const i = S[tab].findIndex(x => x.id===id); if(i>=0) S[tab][i] = data; return data; },
   async historico(id){ const { data, error } = await this.sb.from('prop_historico').select('*').eq('proposta_id', id).order('criado_em'); if(error) throw this.erro(error); return data; },
   async linhaDoTempo(id){ const { data, error } = await this.sb.rpc('prop_linha_do_tempo', { p_proposta:id }); if(error) throw this.erro(error); return data; },
-  async linkAtivo(id){ const { data, error } = await this.sb.from('prop_links').select('criado_em,expira_em,acessos,primeiro_acesso_em,ultimo_acesso_em,criado_por_email').eq('proposta_id', id).is('revogado_em', null).order('criado_em', { ascending:false }).limit(1); if(error) throw this.erro(error); return data[0] || null; },
-  async assinatura(id){ const { data, error } = await this.sb.from('prop_assinaturas').select('*').eq('proposta_id', id).limit(1); if(error) throw this.erro(error); return data[0] || null; },
+  async signatarios(id){ const { data, error } = await this.sb.from('prop_signatarios').select('*').eq('proposta_id', id).is('excluido_em', null).order('ordem').order('criado_em'); if(error) throw this.erro(error); return data; },
+  async salvarSignatario(id, row){ const q = id ? this.sb.from('prop_signatarios').update(row).eq('id', id) : this.sb.from('prop_signatarios').insert({ ...row, tenant_id:S.tenant.id }); const { error } = await q.select().single(); if(error) throw this.erro(error); },
+  async linksDe(id){ const { data, error } = await this.sb.from('prop_links').select('id,signatario_id,tipo,canal,enviado_para,criado_em,enviado_em,expira_em,acessos,primeiro_acesso_em,ultimo_acesso_em').eq('proposta_id', id).is('revogado_em', null); if(error) throw this.erro(error); return data; },
+  async assinaturas(id){ const { data, error } = await this.sb.rpc('prop_assinaturas_ver', { p_proposta:id }); if(error) throw this.erro(error); return data || []; },
   async recarregar(id){ const { data, error } = await this.sb.from('prop_propostas').select('*').eq('id', id).single(); if(error) throw this.erro(error); const i = S.propostas.findIndex(x => x.id===id); if(i>=0) S.propostas[i] = data; return data; },
-  async criarLink(id){ const { data, error } = await this.sb.rpc('prop_link_criar', { p_proposta:id }); if(error) throw this.erro(error); await this.recarregar(id); return data; },
-  async revogarLink(id){ const { data, error } = await this.sb.rpc('prop_link_revogar', { p_proposta:id }); if(error) throw this.erro(error); return data; },
+  async linkSignatario(sid, tipo, canal){ const { data, error } = await this.sb.rpc('prop_link_signatario', { p_signatario:sid, p_tipo:tipo, p_canal:canal }); if(error) throw this.erro(error); return data; },
+  async linkEnvio(linkId, ok){ const { error } = await this.sb.rpc('prop_link_envio', { p_link:linkId, p_ok:ok }); if(error) throw this.erro(error); },
+  async revogarUm(sid, tipo){ const { error } = await this.sb.rpc('prop_link_revogar_um', { p_signatario:sid, p_tipo:tipo }); if(error) throw this.erro(error); },
+  async escritorioAssinar(id, nome, cpf){ const { data, error } = await this.sb.rpc('prop_escritorio_assinar', { p_proposta:id, p_nome:nome, p_cpf:cpf, p_user_agent:navigator.userAgent }); if(error) throw this.erro(error); await this.recarregar(id); return data; },
+  // mesmo canal do Cobrança Pro: a Edge Function mail-proxy valida o login e repassa ao Artecon Mail (a chave fica em secret, nunca no HTML)
+  async enviarEmail(m){ const { data:{ session } } = await this.sb.auth.getSession(); if(!session) throw new Error('Sessão expirada. Entre novamente.');
+    let r; try{ r = await fetch(CFG.SUPABASE_URL + '/functions/v1/mail-proxy', { method:'POST', headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer ' + session.access_token, 'apikey':CFG.SUPABASE_ANON_KEY }, body:JSON.stringify({ to:m.to, assunto:m.assunto, html:m.html, app:'propostas' }) }); }catch(e){ throw new Error('Não foi possível falar com o serviço de e-mail. Verifique a internet.'); }
+    if(!r.ok){ const t = await r.text().catch(() => ''); throw new Error(`O serviço de e-mail recusou o envio (${r.status}): ${t.slice(0,140)}`); } },
   async salvarEscritorio(e){ const { data, error } = await this.sb.from('prop_tenants').update({ escritorio:e }).eq('id', S.tenant.id).select(); if(error) throw this.erro(error); if(!data.length) throw new Error('Somente o diretor pode alterar os dados do escritório.'); S.tenant.escritorio = e; }
 };
 const DB = MODO_NUVEM ? Nuvem : Local;
@@ -673,7 +701,7 @@ function rota(){
   const v = h.replace(/^#\//,''); ir(VIEWS[v] && v!=='form' && v!=='documento' ? v : 'painel');
 }
 window.addEventListener('hashchange', () => { if(S.modoCliente) return; if(/^#\/c\//.test(location.hash)){ location.reload(); return; } if(S.tenant && S.view!=='form') rota(); else if(S.tenant && S.view==='form' && S._hashInterno!==location.hash){ if(confirm('Sair do formulário? O que não foi salvo será perdido.')) rota(); } });
-function ir(view){ if(view!=='documento') S._linkNovo = null; S.view = view; document.querySelectorAll('.menu button').forEach(b => b.classList.toggle('ativo', b.dataset.ir === (view==='form' || view==='documento' ? 'propostas' : view))); VIEWS[view](); window.scrollTo(0,0); const h = hashDe(S.view); if(h && location.hash !== h){ S._hashInterno = h; location.hash = h; } }
+function ir(view){ S.view = view; document.querySelectorAll('.menu button').forEach(b => b.classList.toggle('ativo', b.dataset.ir === (view==='form' || view==='documento' ? 'propostas' : view))); VIEWS[view](); window.scrollTo(0,0); const h = hashDe(S.view); if(h && location.hash !== h){ S._hashInterno = h; location.hash = h; } }
 function topo(titulo, sub, botoes){ return `<div class="topo"><div><h1>${esc(titulo)}</h1><p>${esc(sub)}</p></div><div class="acoes">${botoes || ''}</div></div>`; }
 
 /* ===================== TELAS ===================== */
@@ -690,6 +718,10 @@ const VIEWS = {
       <div class="ind"><div class="rot">Taxa de aprovação</div><div class="val">${k.taxa===null ? '—' : k.taxa + '%'}</div><div class="sub">${k.decididas ? 'sobre ' + k.decididas + ' decidida' + (k.decididas>1?'s':'') + ' (aprovadas + perdidas)' : 'nenhuma proposta decidida ainda'}</div></div>
       <div class="ind"><div class="rot">Honorários aprovados</div><div class="val">${brl(k.aprovMensal)}</div><div class="sub">por mês${k.aprovPontual ? ' + ' + brl(k.aprovPontual) + ' pontual' : ''}</div></div>
     </div>
+    ${(() => { const at = ativos(S.propostas), abre = p => `<button class="btn mini" data-act="doc" data-id="${p.id}">Abrir</button>`;
+      const a1 = at.filter(p => !p.assinada_em && p.clientes_assinaram_em && !p.escritorio_assinou_em && (p.status==='enviada'||p.status==='negociacao')).map(p => `<div class="aviso"><span>Proposta ${esc(numeroFmt(p))} de <b>${esc(p.cliente_nome)}</b>: os clientes já assinaram (${esc(dataHora(p.clientes_assinaram_em))}). <b>Falta a assinatura do escritório.</b></span>${abre(p)}</div>`);
+      const a2 = at.filter(p => p.assinada_em && p.escritorio_assinou_em && !p.via_enviada_em).map(p => `<div class="aviso ambar"><span>Proposta ${esc(numeroFmt(p))} de <b>${esc(p.cliente_nome)}</b> foi assinada por todos em ${esc(dataHora(p.assinada_em))}. <b>A via assinada ainda não foi enviada.</b></span>${abre(p)}</div>`);
+      return a1.length || a2.length ? `<div class="painel"><h2>Assinaturas pendentes</h2>${a1.join('')}${a2.join('')}</div>` : ''; })()}
     ${avisos ? `<div class="painel"><h2>Validade</h2>${avisos}</div>` : ''}
     <div class="duas">
       <div class="painel"><h2>Propostas recentes</h2>${tabelaPropostas(propostasOrdenadas().slice(0,6), true)}</div>
@@ -751,6 +783,7 @@ const VIEWS = {
 
     <div class="painel"><h2>Condições</h2><div id="condicoes"></div>
       <div class="campo c4" style="margin-top:12px"><label for="f_adic">Cláusulas adicionais de valor (uma por linha; entram numeradas na seção 2)</label><textarea id="f_adic" data-c="adicionais" rows="3" placeholder="Ex.: Os valores consideram o regime de Lucro Presumido; havendo mudança de regime, os honorários serão revistos.">${esc(c.adicionais||'')}</textarea></div>
+      <label class="marcar"><input type="checkbox" id="f_foto" ${F.exige_foto?'checked':''}> Exigir foto do signatário segurando o documento para assinar pelo link</label>
       <label class="marcar"><input type="checkbox" data-c="aceite" ${c.aceite?'checked':''}> Incluir termo de aceite para assinatura do cliente (não existe nos modelos atuais)</label>
       <div class="campo c4" style="margin-top:8px"><label for="f_obs">Anotações internas (não saem no documento)</label><textarea id="f_obs" data-f="observacoes" rows="2">${esc(F.observacoes||'')}</textarea></div>
     </div>
@@ -762,23 +795,23 @@ const VIEWS = {
     const p = S.docPrevia || S.propostas.find(x => x.id===S.docId); if(!p) return ir('propostas');
     const previa = !!S.docPrevia, travada = !!p.assinada_em;
     const venc = p.validade && p.validade<hojeISO() && (p.status==='enviada'||p.status==='negociacao');
-    const etapas = [['Criada', p.criado_em], ['Enviada', p.enviada_em], ['Aprovada', p.aprovada_em], ['Perdida', p.status==='perdida' ? p.perdida_em : null], ['Assinada pelo cliente', p.assinada_em]].filter(x => x[1]);
+    const etapas = [['Criada', p.criado_em], ['Enviada', p.enviada_em], ['Clientes assinaram', p.clientes_assinaram_em], ['Escritório assinou', p.escritorio_assinou_em], ['Aprovada', p.aprovada_em], ['Perdida', p.status==='perdida' ? p.perdida_em : null], [p.escritorio_assinou_em ? 'Assinada por todos' : 'Assinada pelo cliente', p.assinada_em], ['Via assinada enviada', p.via_enviada_em]].filter(x => x[1]);
     $('conteudo').innerHTML = topo(previa ? 'Prévia do documento' : 'Proposta ' + numeroFmt(p), p.cliente_nome,
       `<button class="btn" data-act="${previa?'voltarForm':'irPropostas'}">Voltar</button>${previa ? '' : `<button class="btn" data-act="editar" data-id="${p.id}" ${travada ? 'disabled title="Proposta assinada pelo cliente não pode ser alterada."' : p.status==='aprovada'?'disabled title="Proposta aprovada fica congelada. Volte o status para editar."':''}>Editar</button><button class="btn" data-act="duplicar" data-id="${p.id}">Duplicar</button>`}<button class="btn" data-act="word">Baixar Word</button><button class="btn primario" data-act="imprimir">Imprimir / salvar PDF</button>`) +
       (previa ? '' : `<div class="painel"><h2>Controle</h2>
-        <div class="filtros" style="align-items:center;margin:0 0 10px">${selo(p.status)}${travada ? ' <span class="selo aprovada">Assinada pelo cliente</span>' : ''} <span>Mensal <b>${brl(p.total_mensal)}</b></span> <span>Pontual <b>${brl(p.total_pontual)}</b></span> <span>Validade <b class="${venc ? 'vencida':''}">${p.validade ? dataBR(p.validade) : '—'}</b></span></div>
+        <div class="filtros" style="align-items:center;margin:0 0 10px">${selo(p.status)}${travada ? ` <span class="selo aprovada">${p.escritorio_assinou_em ? 'Assinada por todos' : 'Assinada pelo cliente'}</span>` : ''} <span>Mensal <b>${brl(p.total_mensal)}</b></span> <span>Pontual <b>${brl(p.total_pontual)}</b></span> <span>Validade <b class="${venc ? 'vencida':''}">${p.validade ? dataBR(p.validade) : '—'}</b></span></div>
         <div class="etapas">${etapas.map(x => `<div><span>${esc(x[0])}</span><b>${esc(dataHora(x[1]))}</b></div>`).join('')}</div>
         ${p.observacoes ? `<p style="margin:12px 0 0"><b>Anotações internas:</b> ${esc(p.observacoes)}</p>` : ''}</div>
-      <div class="painel"><h2>Link para o cliente</h2><div id="linkCliente">Carregando…</div></div>
+      <div class="painel"><h2>Assinaturas</h2><div id="assinaturas">Carregando…</div></div>
       <div class="painel"><h2>Histórico</h2><ul class="linha-tempo" id="hist"><li>Carregando…</li></ul></div>`) +
       `<div class="doc-area" id="docArea">${docHTML(p)}</div>`;
     if(!previa) tenta(async () => {
-      const [lt, link, ass] = await Promise.all([DB.linhaDoTempo(p.id), DB.linkAtivo(p.id), DB.assinatura(p.id)]);
+      const [lt, sigs, links, ass] = await Promise.all([DB.linhaDoTempo(p.id), DB.signatarios(p.id), DB.linksDe(p.id), DB.assinaturas(p.id)]);
       if(S.view!=='documento' || S.docId!==p.id) return;
-      S.assinaturaDoc = ass;
+      S.doc = { sigs, links, ass };
       $('hist').innerHTML = lt.map(linhaTempoHTML).join('') || '<li>Sem registros.</li>';
-      desenhaLinkCliente(p, link, ass, S._linkNovo && S._linkNovo.id===p.id ? S._linkNovo.r : undefined);
-      if(ass) $('docArea').innerHTML = docHTML(p, ass);
+      desenhaAssinaturas(p);
+      if(ass.length) $('docArea').innerHTML = docHTML(p, ass, { fotos:true });
     });
   },
 
@@ -787,11 +820,15 @@ const VIEWS = {
     const campo = (k, rot, cls, tipo) => `<div class="campo ${cls||''}"><label for="e_${k}">${rot}</label><input type="${tipo||'text'}" id="e_${k}" data-e="${k}" value="${esc(e[k] ?? '')}" ${d}></div>`;
     $('conteudo').innerHTML = topo('Escritório','Dados que saem na capa, no cabeçalho e na assinatura das propostas.','') + `
     <div class="painel"><h2>Identificação no documento</h2>${pode ? '' : '<p>Somente o diretor altera estes dados.</p>'}<div class="grade">
-      ${campo('endereco','Endereço','c4')}${campo('cidade','Cidade/UF da data')}${campo('telefone','Telefone')}${campo('site','Site')}${campo('instagram','Instagram')}${campo('frase','Frase da capa','c4')}${campo('responsavel','Quem assina')}${campo('registro','Registro profissional')}
+      ${campo('endereco','Endereço','c4')}${campo('cidade','Cidade/UF da data')}${campo('telefone','Telefone')}${campo('site','Site')}${campo('instagram','Instagram')}${campo('frase','Frase da capa','c4')}${campo('responsavel','Quem assina')}${campo('registro','Registro profissional')}${campo('cpf_responsavel','CPF de quem assina pelo escritório')}
     </div></div>
     <div class="painel"><h2>Padrões das novas propostas</h2><div class="grade">
       ${campo('dia_vencimento','Dia de vencimento','c1','number')}${campo('validade_dias','Validade (dias)','c1','number')}${campo('indice','Índice de reajuste')}${campo('valor_funcionario','Valor por funcionário (R$)','c1')}
     </div><div class="barra-salvar" style="margin-top:16px"><button class="btn primario" data-act="salvarEscritorio" ${d}>Salvar dados do escritório</button></div></div>
+    <div class="painel"><h2>Privacidade (aviso mostrado ao cliente na página de assinatura)</h2><div class="grade">
+      ${campo('email_privacidade','E-mail para assuntos de privacidade','c4','email')}${campo('prazo_guarda','Prazo de guarda informado ao cliente','c4')}
+    </div><p class="dica" style="margin:10px 0 0">Em branco, o aviso usa o telefone do escritório como contato e o texto “pelo prazo da relação contratual e pelos prazos legais de prescrição”.</p>
+    <div class="barra-salvar" style="margin-top:12px"><button class="btn primario" data-act="salvarEscritorio" ${d}>Salvar</button></div></div>
     <div class="painel"><h2>Cópia de segurança</h2><p>Baixa um arquivo JSON com clientes, serviços e propostas deste escritório.</p><button class="btn" data-act="backup">Exportar backup</button></div>`;
   },
 
@@ -807,32 +844,113 @@ function linhaTempoHTML(x){
   if(x.tipo==='criada') t = 'Proposta criada';
   else if(x.tipo==='status') t = `Status: ${esc(STATUS[d.de]||d.de)} → <b>${esc(STATUS[d.para]||d.para)}</b>`;
   else if(x.tipo==='alteracao'){ const l = descreveAlteracao(d); t = 'Conteúdo alterado'; extra = `<ul class="dif">${l.map(i => `<li>${esc(i)}</li>`).join('')}</ul>`; }
-  else if(x.tipo==='link_gerado') t = `Link do cliente gerado (vale até ${esc(dataHora(d.expira_em))})`;
-  else if(x.tipo==='link_cancelado') t = 'Link do cliente cancelado';
-  else if(x.tipo==='cliente_abriu') t = `Cliente abriu a proposta pela primeira vez${d.acessos>1 ? ` (${d.acessos} acessos; último em ${esc(dataHora(d.ultimo_acesso_em))})` : ''}`;
-  else if(x.tipo==='assinada') t = `<b>Assinada eletronicamente</b> — código ${esc(d.codigo)}${d.ip ? ', IP ' + esc(d.ip) : ''}`;
+  else if(x.tipo==='link_gerado' || x.tipo==='via_gerada'){ const via = d.canal==='whatsapp' ? 'WhatsApp' : d.canal==='email' ? 'e-mail' : null;
+    t = `${x.tipo==='via_gerada' ? 'Via assinada (só leitura)' : 'Link de assinatura'}${d.signatario ? ' para <b>' + esc(d.signatario) + '</b>' : ''}${via ? ' por ' + via + (d.para ? ' (' + esc(d.para) + ')' : '') : ''}${via && d.enviado===false ? ' — <span class="vencida">envio não confirmado</span>' : ''}, vale até ${esc(dataHora(d.expira_em))}`; }
+  else if(x.tipo==='link_cancelado') t = `Link ${d.signatario ? 'de ' + esc(d.signatario) + ' ' : ''}cancelado${({ substituido:' (substituído por um novo)', cancelado_pelo_escritorio:' pelo escritório', falha_no_envio:' porque o envio falhou', signatario_removido:' (signatário removido)', contato_alterado:' (contato alterado)' })[d.motivo] || ''}`;
+  else if(x.tipo==='cliente_abriu') t = `Abriu a proposta pela primeira vez${d.acessos>1 ? ` (${d.acessos} acessos; último em ${esc(dataHora(d.ultimo_acesso_em))})` : ''}`;
+  else if(x.tipo==='via_aberta') t = `Abriu a via assinada${d.acessos>1 ? ` (${d.acessos} acessos)` : ''}`;
+  else if(x.tipo==='assinada') t = `<b>Assinou eletronicamente</b> — código ${esc(d.codigo)}${d.foto ? ', com foto do documento' : ''}`;
+  else if(x.tipo==='assinada_escritorio') t = `<b>Assinou pelo escritório</b> — código ${esc(d.codigo)}`;
   else t = esc(x.tipo);
-  return `<li class="lt-${esc(x.tipo)}"><span class="lt-quando">${esc(dataHora(x.quando))}</span> ${t}<small>${quem}</small>${extra}</li>`;
+  return `<li class="lt-${esc(x.tipo==='assinada_escritorio' ? 'assinada' : x.tipo==='via_gerada' ? 'link_gerado' : x.tipo==='via_aberta' ? 'cliente_abriu' : x.tipo)}"><span class="lt-quando">${esc(dataHora(x.quando))}</span> ${t}<small>${quem}</small>${extra}</li>`;
 }
 function urlCliente(token){ return location.href.split('#')[0] + '#/c/' + token; }
-function desenhaLinkCliente(p, link, ass, novo){
-  const el = $('linkCliente'); if(!el) return;
-  if(!MODO_NUVEM){ el.innerHTML = '<p class="dica">Disponível com o app ligado ao banco. No modo local não há link nem assinatura.</p>'; return; }
-  if(ass){ el.innerHTML = `<p style="margin:0"><b>${esc(ass.nome)}</b>${ass.cargo ? ' (' + esc(ass.cargo) + ')' : ''} assinou em <b>${esc(dataHora(ass.assinado_em))}</b>. Código de verificação <b>${esc(ass.codigo)}</b>. O comprovante está na última página do documento abaixo e sai no PDF.</p><div class="filtros" style="margin:10px 0 0"><button class="btn" data-act="copiarLink" title="Abre o app inteiro e pede login: só para quem é do escritório">Copiar link interno</button></div>`; return; }
-  if(p.status==='aprovada' || p.status==='perdida'){ el.innerHTML = '<p class="dica" style="margin:0">Proposta aprovada ou perdida não recebe link. Para o cliente assinar pelo link, a proposta precisa estar Enviada ou Em negociação.</p><div class="filtros" style="margin:10px 0 0"><button class="btn primario" data-act="reabrir">Reabrir como Enviada</button><button class="btn" data-act="copiarLink" title="Abre o app inteiro e pede login: só para quem é do escritório">Copiar link interno</button></div>'; return; }
+function zapNumero(c){ const d = String(c||'').replace(/\D/g,''); return d.length<=11 ? '55' + d : d; }
+function emailHTML(titulo, corpo, botao, url){
+  const e = esc_();
+  return `<div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:0 auto;color:#2f2d2e">
+  <div style="background:#4F4C4D;color:#fff;padding:18px 26px;border-bottom:5px solid #FFF200;text-align:center;font-size:18px;font-weight:bold">${esc(titulo)}</div>
+  <div style="border:1px solid #dfe7eb;border-top:none;padding:26px 30px;font-size:14px;line-height:1.55">${corpo}
+    <p style="text-align:center;margin:26px 0"><a href="${esc(url)}" style="background:#BC151B;color:#fff;text-decoration:none;padding:13px 26px;font-weight:bold;display:inline-block">${esc(botao)}</a></p>
+    <p style="font-size:12px;color:#6f6b6c">Se o botão não abrir, copie este endereço no navegador:<br><span style="word-break:break-all">${esc(url)}</span></p>
+    <p style="font-size:12px;color:#6f6b6c">Este endereço é pessoal. Não o encaminhe a terceiros.</p></div>
+  <p style="font-size:11px;color:#999;text-align:center;margin-top:12px">${esc(S.tenant.nome)} · ${esc(e.telefone||'')} · ${esc(e.site||'')}</p></div>`;
+}
+function textoEnvio(p, sig, tipo, url){
+  const n = numeroFmt(p), prim = sig.nome.split(' ')[0];
+  if(tipo==='leitura') return { assunto:`Proposta de Honorários nº ${n} — via assinada`, zap:`Olá, ${prim}! A Proposta de Honorários nº ${n} foi assinada por todos. Segue a via para impressão (válida por 30 dias): ${url}`,
+    html:emailHTML('Proposta assinada por todos', `<p>Olá, ${esc(prim)}!</p><p>A <b>Proposta de Honorários nº ${esc(n)}</b>, de ${esc(p.cliente_nome)}, foi assinada por todas as partes. No endereço abaixo você abre a via completa, com o comprovante das assinaturas, e pode salvar em PDF ou imprimir.</p><p>O endereço fica disponível por 30 dias.</p>`, 'Abrir a via assinada', url) };
+  return { assunto:`Proposta de Honorários nº ${n} — ${S.tenant.nome}`, zap:`Olá, ${prim}! Segue a Proposta de Honorários nº ${n} da ${S.tenant.nome} para leitura e assinatura eletrônica: ${url}`,
+    html:emailHTML('Proposta de Honorários', `<p>Olá, ${esc(prim)}!</p><p>Segue a <b>Proposta de Honorários nº ${esc(n)}</b>, preparada para ${esc(p.cliente_nome)}. No endereço abaixo você lê a proposta completa e, estando de acordo, assina eletronicamente ali mesmo.</p>${p.exige_foto ? '<p>Para assinar será pedida uma foto sua segurando um documento com foto.</p>' : ''}${p.validade ? `<p>Validade da proposta: ${esc(dataBR(p.validade))}.</p>` : ''}`, 'Ler e assinar a proposta', url) };
+}
+async function enviarLink(p, sig, tipo, canal, janela){
+  const r = await DB.linkSignatario(sig.id, tipo, canal), url = urlCliente(r.token), tx = textoEnvio(p, sig, tipo, url);
+  if(canal==='email'){
+    try{ await DB.enviarEmail({ to:sig.email, assunto:tx.assunto, html:tx.html }); }catch(e){ await DB.linkEnvio(r.link_id, false).catch(() => {}); throw e; }
+    await DB.linkEnvio(r.link_id, true);
+  } else {
+    const wa = 'https://wa.me/' + zapNumero(sig.celular) + '?text=' + encodeURIComponent(tx.zap);
+    if(janela && !janela.closed) janela.location = wa; else { try{ await navigator.clipboard.writeText(tx.zap); }catch(e){} toast('O navegador bloqueou a janela do WhatsApp. A mensagem foi copiada: cole na conversa do cliente.', true); }
+    await DB.linkEnvio(r.link_id, true);
+  }
+}
+function desenhaAssinaturas(p){
+  const el = $('assinaturas'); if(!el) return;
+  if(!MODO_NUVEM){ el.innerHTML = '<p class="dica">Disponível com o app ligado ao banco. No modo local não há envio nem assinatura.</p>'; return; }
+  const { sigs, links, ass } = S.doc, fim = !!p.assinada_em, diretor = S.perfil==='diretor';
+  const aberta = p.status==='rascunho' || p.status==='enviada' || p.status==='negociacao';
+  const esc_ass = ass.find(a => a.papel==='escritorio'), legado = ass.filter(a => a.papel==='cliente' && !a.signatario_id);
+  const linha = s => {
+    const a = ass.find(x => x.signatario_id===s.id), lk = links.find(l => l.signatario_id===s.id && l.tipo==='assinatura'), via = links.find(l => l.signatario_id===s.id && l.tipo==='leitura');
+    let sit, ac = '';
+    if(a) sit = `<span class="selo aprovada">Assinou</span> ${esc(dataHora(a.assinado_em))} · código ${esc(a.codigo)}${a.foto_hash ? ' · foto registrada' : ''}`;
+    else if(lk) sit = `<span class="selo enviada">Enviado</span> por ${lk.canal==='whatsapp' ? 'WhatsApp' : 'e-mail'} em ${esc(dataHora(lk.criado_em))}${lk.enviado_em ? '' : ' <span class="vencida">(envio não confirmado)</span>'} · ${lk.primeiro_acesso_em ? `abriu ${lk.acessos} vez${lk.acessos>1?'es':''}, a última em ${esc(dataHora(lk.ultimo_acesso_em))}` : '<b>ainda não abriu</b>'}`;
+    else sit = '<span class="selo">Não enviado</span>';
+    if(fim){ sit += via ? `<br><small>Via assinada enviada por ${via.canal==='whatsapp' ? 'WhatsApp' : 'e-mail'} em ${esc(dataHora(via.criado_em))}${via.primeiro_acesso_em ? ' · já abriu' : ' · ainda não abriu'}</small>` : '<br><small class="vencida">Via assinada ainda não enviada</small>';
+      ac = `<button class="btn mini" data-act="sigEnviar" data-id="${s.id}" data-tipo="leitura" data-canal="email" ${s.email?'':'disabled title="Sem e-mail"'}>${via ? 'Reenviar via' : 'Enviar via'} por e-mail</button> <button class="btn mini" data-act="sigEnviar" data-id="${s.id}" data-tipo="leitura" data-canal="whatsapp" ${s.celular?'':'disabled title="Sem celular"'}>WhatsApp</button>`; }
+    else if(!a && aberta) ac = `<button class="btn mini" data-act="sigEnviar" data-id="${s.id}" data-tipo="assinatura" data-canal="email" ${s.email?'':'disabled title="Sem e-mail"'}>${lk ? 'Reenviar' : 'Enviar'} por e-mail</button> <button class="btn mini" data-act="sigEnviar" data-id="${s.id}" data-tipo="assinatura" data-canal="whatsapp" ${s.celular?'':'disabled title="Sem celular"'}>WhatsApp</button>${lk ? ` <button class="btn mini" data-act="sigCancelar" data-id="${s.id}">Cancelar link</button>` : ''} <button class="btn mini" data-act="sigEditar" data-id="${s.id}">Editar</button> <button class="btn mini" data-act="sigRemover" data-id="${s.id}">Remover</button>`;
+    return `<tr><td><b>${esc(s.nome)}</b>${s.qualidade ? '<br><small>' + esc(s.qualidade) + '</small>' : ''}</td><td><small>${esc(s.email || 'sem e-mail')}<br>${esc(s.celular ? s.celular.replace(/^(\d{2})(\d{4,5})(\d{4})$/,'($1) $2-$3') : 'sem celular')}</small></td><td>${sit}</td><td class="acoes-linha">${ac}</td></tr>`; };
+  const pendEmail = sigs.filter(s => s.email && !ass.some(a => a.signatario_id===s.id) && !links.some(l => l.signatario_id===s.id && l.tipo==='assinatura'));
   let h = '';
-  if(novo){ const url = urlCliente(novo.token), msg = `Olá! Segue a Proposta de Honorários nº ${numeroFmt(p)} da ${S.tenant.nome} para leitura e aceite eletrônico: ${url}`;
-    h += `<div class="linkbox"><label for="urlCli" class="rotulo">Endereço para enviar ao cliente — copie agora: por segurança ele não fica guardado e não aparece de novo</label>
-      <div class="filtros" style="margin:6px 0 0"><input type="text" id="urlCli" readonly value="${esc(url)}"><button class="btn primario" data-act="copiarUrlCli">Copiar</button>
-      <a class="btn" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(msg)}">WhatsApp</a>
-      <a class="btn" href="mailto:?subject=${encodeURIComponent('Proposta de Honorários nº ' + numeroFmt(p))}&body=${encodeURIComponent(msg)}">E-mail</a></div></div>`; }
-  if(link) h += `<p style="margin:${novo?'12px':'0'} 0 10px">Link ativo gerado em ${esc(dataHora(link.criado_em))} por ${esc(link.criado_por_email||'—')}, vale até ${esc(dataHora(link.expira_em))}. ${link.primeiro_acesso_em ? `O cliente abriu <b>${link.acessos}</b> vez${link.acessos>1?'es':''}; a primeira em ${esc(dataHora(link.primeiro_acesso_em))} e a última em ${esc(dataHora(link.ultimo_acesso_em))}.` : '<b>O cliente ainda não abriu.</b>'}</p>`;
-  else if(!novo) h += `<p style="margin:0 0 10px">O cliente recebe um endereço que abre <b>só esta proposta</b> — sem menu e sem login — e pode assinar ali mesmo.${p.status==='rascunho' ? ' Ao gerar o link, a proposta passa para <b>Enviada</b>.' : ''}</p>`;
-  h += `<div class="filtros" style="margin:0"><button class="btn ${link||novo ? '' : 'primario'}" data-act="gerarLink">${link||novo ? 'Gerar novo link (cancela o anterior)' : 'Gerar link para o cliente'}</button>${link||novo ? '<button class="btn" data-act="cancelarLink">Cancelar link</button>' : ''}<button class="btn" data-act="copiarLink" title="Abre o app inteiro e pede login: só para quem é do escritório">Copiar link interno</button></div>`;
+  if(!aberta && !fim) h += `<p class="dica" style="margin:0 0 10px">Proposta ${esc(STATUS[p.status])} não recebe assinaturas. <button class="btn mini" data-act="reabrir">Reabrir como Enviada</button></p>`;
+  h += `<div class="rolagem"><table class="lista"><thead><tr><th>Quem assina</th><th>Contato</th><th>Situação</th><th></th></tr></thead><tbody>
+    ${sigs.map(linha).join('')}
+    ${legado.map(a => `<tr><td><b>${esc(a.nome)}</b><br><small>${esc(a.cargo||'')}</small></td><td><small>${esc(a.email||'')}</small></td><td><span class="selo aprovada">Assinou</span> ${esc(dataHora(a.assinado_em))} · código ${esc(a.codigo)} <small>(link único da v1.3)</small></td><td></td></tr>`).join('')}
+    ${!sigs.length && !legado.length ? '<tr><td colspan="4" class="vazio">Cadastre quem vai assinar pelo cliente. Cada pessoa recebe o próprio link.</td></tr>' : ''}
+    <tr><td><b>${esc(S.tenant.nome)}</b><br><small>Escritório — assinatura obrigatória</small></td><td><small>${esc(esc_ass ? esc_ass.email : 'diretor logado')}</small></td>
+      <td>${esc_ass ? `<span class="selo aprovada">Assinou</span> ${esc(dataHora(esc_ass.assinado_em))} · ${esc(esc_ass.nome)} · código ${esc(esc_ass.codigo)}` : legado.length && fim ? '<span class="selo">Não se aplica</span> <small>proposta fechada na v1.3</small>' : '<span class="selo negociacao">Pendente</span> pode assinar antes ou depois dos clientes'}</td>
+      <td class="acoes-linha">${!esc_ass && !fim && aberta ? (diretor ? '<button class="btn mini primario" data-act="escAssinar">Assinar pelo escritório</button>' : '<small>só o diretor assina</small>') : ''}</td></tr></tbody></table></div>
+    <div class="filtros" style="margin:14px 0 0;align-items:center">
+      ${!fim && aberta ? `<button class="btn" data-act="sigEditar">Adicionar signatário</button>${pendEmail.length ? `<button class="btn primario" data-act="sigEnviarTodos">Enviar por e-mail a quem falta (${pendEmail.length})</button>` : ''}` : ''}
+      ${fim && sigs.length ? `<button class="btn ${p.via_enviada_em ? '' : 'primario'}" data-act="viaTodos">${p.via_enviada_em ? 'Reenviar a via assinada a todos' : 'Enviar a via assinada a todos'}</button>` : ''}
+      <button class="btn" data-act="copiarLink" title="Abre o app inteiro e pede login: só para quem é do escritório">Copiar link interno</button>
+      ${ass.some(a => a.foto) ? '<label class="marcar" style="padding:0"><input type="checkbox" id="incFotos" checked> Imprimir as fotos no comprovante</label>' : ''}
+    </div>
+    ${p.exige_foto && !fim ? '<p class="dica" style="margin:10px 0 0">Esta proposta exige foto com documento na assinatura do cliente.</p>' : ''}
+    ${!diretor && ass.length ? '<p class="dica" style="margin:10px 0 0">CPF, IP e fotos dos signatários aparecem completos só para o diretor.</p>' : ''}`;
   el.innerHTML = h;
 }
+function dlgSignatario(id){
+  const p = S.propostas.find(x => x.id===S.docId); let s = id ? S.doc.sigs.find(x => x.id===id) : null;
+  if(!s){ const c = !S.doc.sigs.length && p.cliente_id ? S.clientes.find(x => x.id===p.cliente_id) : null; s = { nome:!S.doc.sigs.length ? (p.contato||'') : '', qualidade:'', email:c ? (c.email||'') : '', celular:c ? soDoc(c.telefone||'').replace(/\D/g,'') : '' }; }
+  $('dlg').innerHTML = `<h2>${id ? 'Editar signatário' : 'Novo signatário'}</h2><div class="grade">
+    <div class="campo c4"><label for="g_nome">Nome completo *</label><input type="text" id="g_nome" value="${esc(s.nome)}"></div>
+    <div class="campo c4"><label for="g_qual">Qualidade</label><input type="text" id="g_qual" value="${esc(s.qualidade||'')}" placeholder="Sócio administrador, procurador…"></div>
+    <div class="campo"><label for="g_email">E-mail</label><input type="email" id="g_email" value="${esc(s.email||'')}"></div>
+    <div class="campo"><label for="g_cel">Celular com DDD (WhatsApp)</label><input type="text" id="g_cel" inputmode="numeric" value="${esc(s.celular||'')}" placeholder="48999990000"></div>
+  </div><p class="dica">Informe ao menos um contato. O link de assinatura e a via final vão para este e-mail. Mudar o contato cancela o link que já tiver sido enviado.</p>
+  <div class="barra-salvar" style="margin-top:14px"><button class="btn" data-act="fecharDlg">Cancelar</button><button class="btn primario" data-act="sigSalvar" data-id="${id||''}">Salvar signatário</button></div>`;
+  $('dlg').showModal();
+}
+function dlgEscritorio(){
+  const p = S.propostas.find(x => x.id===S.docId), e = esc_();
+  $('dlg').innerHTML = `<h2>Assinar pelo escritório</h2><p>Proposta nº <b>${esc(numeroFmt(p))}</b> — ${esc(p.cliente_nome)} · mensal ${brl(p.total_mensal)} · pontual ${brl(p.total_pontual)}</p><div class="grade">
+    <div class="campo c4"><label for="x_nome">Nome completo de quem assina *</label><input type="text" id="x_nome" value="${esc(e.responsavel||'')}"></div>
+    <div class="campo"><label for="x_cpf">CPF *</label><input type="text" id="x_cpf" inputmode="numeric" value="${esc(docFmt(e.cpf_responsavel||''))}" placeholder="000.000.000-00"></div></div>
+  <label class="marcar" style="margin-top:10px"><input type="checkbox" id="x_ok"> <span>Assino pela ${esc(S.tenant.nome)} esta proposta, obrigando o escritório aos seus termos, e reconheço esta assinatura eletrônica como válida (art. 10, § 2º, da MP 2.200-2/2001). Ficam registrados meu usuário (${esc(S.email)}), data, hora, IP e o hash do conteúdo.</span></label>
+  <p class="dica">Depois de qualquer assinatura o conteúdo da proposta não pode mais ser alterado.</p>
+  <div class="barra-salvar" style="margin-top:14px"><button class="btn" data-act="fecharDlg">Cancelar</button><button class="btn primario" data-act="escConfirmar">Assinar</button></div>`;
+  $('dlg').showModal();
+}
+async function enviarViaATodos(p, silencioso){
+  const sigs = await DB.signatarios(p.id), com = sigs.filter(s => s.email), falhas = [];
+  for(const s of com){ try{ await enviarLink(p, s, 'leitura', 'email'); }catch(e){ falhas.push(`${s.nome}: ${e.message}`); } }
+  const sem = sigs.length - com.length;
+  if(falhas.length) toast('Via não enviada para ' + falhas.join(' | '), true);
+  else if(!silencioso || com.length) toast(`Via assinada enviada por e-mail a ${com.length} signatário${com.length===1?'':'s'}${sem ? `; ${sem} sem e-mail: use o WhatsApp` : ''}.`);
+}
 
-/* ----- lista de propostas ----- */
+/* ----- lista de propostas ----- *//* ----- lista de propostas ----- */
 function tabelaPropostas(arr, compacta){
   if(!arr.length) return `<div class="vazio">${S.propostas.length ? 'Nenhuma proposta encontrada com este filtro.' : 'Nenhuma proposta ainda. Crie a primeira em “Nova proposta”.'}</div>`;
   const hoje = hojeISO();
@@ -854,7 +972,7 @@ function listarPropostas(){
 function novaF(clienteId){
   const e = esc_(), hoje = hojeISO(), c = clienteId ? S.clientes.find(x => x.id===clienteId) : null;
   return { id:null, cliente_id:c ? c.id : null, cliente_nome:c ? c.nome : '', cliente_documento:c ? (c.documento||'') : '', contato:c ? (c.contato||'') : '', tratamento:c ? (c.tratamento||'') : '',
-    modelo:'recorrente', assunto:ASSUNTO.recorrente, abertura:ABERTURA.recorrente, itens:[], data_proposta:hoje, validade:somaDias(hoje, parseInt(e.validade_dias)||10), observacoes:'', status:'rascunho',
+    modelo:'recorrente', exige_foto:false, assunto:ASSUNTO.recorrente, abertura:ABERTURA.recorrente, itens:[], data_proposta:hoje, validade:somaDias(hoje, parseInt(e.validade_dias)||10), observacoes:'', status:'rascunho',
     condicoes:{ dia_vencimento:parseInt(e.dia_vencimento)||20, indice:e.indice||'IGP-M/FGV', adicional_anual:true, revisao_bimestral:true, taxas_abertura:true, prolabore_sem_custo:true, parcelas:[], prazo_dias:'', prazo_marco:'contados da assinatura do contrato', adicionais:'', aceite:false } };
 }
 function copiaF(p, duplicar){
@@ -922,7 +1040,7 @@ async function salvarProposta(){
   if(S.errosForm.length){ $('errosForm').innerHTML = `<div class="erros" role="alert"><b>Não foi possível salvar:</b><ul>${S.errosForm.map(e => `<li>${esc(e)}</li>`).join('')}</ul></div>`; window.scrollTo(0,0); return; }
   await tenta(async () => {
     const cliente_id = await resolveCliente(F);
-    const row = { cliente_id, cliente_nome:F.cliente_nome.trim(), cliente_documento:F.cliente_documento||null, contato:F.contato||null, tratamento:F.tratamento||null, modelo:F.modelo, assunto:F.assunto||null, abertura:F.abertura||null, itens:F.itens, condicoes:F.condicoes, total_mensal:F.total_mensal, total_pontual:F.total_pontual, validade:F.validade||null, observacoes:F.observacoes||null };
+    const row = { cliente_id, cliente_nome:F.cliente_nome.trim(), cliente_documento:F.cliente_documento||null, contato:F.contato||null, tratamento:F.tratamento||null, modelo:F.modelo, assunto:F.assunto||null, abertura:F.abertura||null, itens:F.itens, condicoes:F.condicoes, total_mensal:F.total_mensal, total_pontual:F.total_pontual, validade:F.validade||null, observacoes:F.observacoes||null, ...(MODO_NUVEM ? { exige_foto:!!F.exige_foto } : {}) };
     let p;
     if(F.id) p = await DB.alterar('propostas', F.id, row);
     else p = await DB.inserir('propostas', { ...row, status:'rascunho', data_proposta:F.data_proposta });
@@ -931,7 +1049,7 @@ async function salvarProposta(){
 }
 
 /* ----- documento ----- */
-function docHTML(p, ass){
+function docHTML(p, ass, op){
   const e = esc_(), secoes = clausulas(p, e), c = p.condicoes || {};
   const dirigido = [p.tratamento, p.contato].filter(Boolean).join(' ');
   const assunto = String(p.assunto||'').trim();
@@ -958,18 +1076,24 @@ function docHTML(p, ass){
     <p>Atenciosamente,</p>
     <div class="assinatura">_____________________________<br>${esc(e.responsavel)}<br>${esc(e.registro)}</div>
     ${c.aceite ? `<div class="aceite"><b>TERMO DE ACEITE</b><p style="margin:3mm 0 0">Declaro que li e estou de acordo com as condições desta proposta${p.numero ? ' nº ' + esc(numeroFmt(p)) : ''}, autorizando a elaboração do contrato de prestação de serviços contábeis.</p><div class="linhas"><div>${esc(p.cliente_nome)}${p.cliente_documento ? '<br>' + esc(docFmt(p.cliente_documento)) : ''}</div><div>Local e data</div></div></div>` : ''}
-    ${ass ? comprovanteHTML(p, ass) : ''}
+    ${ass && (Array.isArray(ass) ? ass.length : true) ? comprovanteHTML(p, Array.isArray(ass) ? ass : [ass], op || {}) : ''}
   </div></td></tr></tbody></table></div>`;
 }
-function comprovanteHTML(p, a){
-  const cpf = /^\d{11}$/.test(a.cpf || '') ? docFmt(a.cpf) : a.cpf, L = (r, v) => v ? `<tr><th>${r}</th><td>${v}</td></tr>` : '';
-  return `<div class="comprovante"><h3 style="margin-top:0">COMPROVANTE DE ASSINATURA ELETRÔNICA</h3><table>
-    ${L('Documento', 'Proposta de Honorários nº ' + esc(numeroFmt(p)) + ' — ' + esc(p.cliente_nome))}
-    ${L('Signatário', esc(a.nome))}${L('CPF', esc(cpf))}${L('E-mail', esc(a.email))}${L('Qualidade', esc(a.cargo || ''))}
+function comprovanteHTML(p, lista, op){
+  const L = (r, v) => v ? `<tr><th>${r}</th><td>${v}</td></tr>` : '';
+  const bloco = (a, i) => { const cpf = /^\d{11}$/.test(a.cpf || '') ? docFmt(a.cpf) : a.cpf;
+    return `<div class="ass-bloco"><h4>${i+1}. ${a.papel==='escritorio' ? 'Pelo escritório' : 'Pelo cliente'} — ${esc(a.nome)}</h4><table>
+    ${L('CPF', esc(cpf))}${L('E-mail', esc(a.email))}${L('Qualidade', esc(a.cargo || ''))}
+    ${a.papel==='escritorio' ? L('Acesso', 'usuário e senha pessoais no sistema') : L('Link recebido por', a.canal==='email' ? 'e-mail enviado pelo sistema' + (a.enviado_para ? ' para ' + esc(a.enviado_para) : '') + ', sem exibição do endereço ao escritório' : a.canal==='whatsapp' ? 'WhatsApp, entregue pelo escritório' + (a.enviado_para ? ' para ' + esc(a.enviado_para) : '') : '')}
     ${L('Data e hora', esc(dataHora(a.assinado_em)) + ' (horário de Brasília)')}${L('Endereço IP', esc(a.ip || ''))}${L('Navegador', esc(a.user_agent || ''))}
-    ${L('Código de verificação', '<b>' + esc(a.codigo) + '</b>')}${L('Hash SHA-256 do conteúdo', '<span class="hash">' + esc(a.hash_documento) + '</span>')}</table>
-    <p><b>Declaração aceita pelo signatário:</b> ${esc(a.declaracao)}</p>
-    <p style="font-size:9pt">O hash acima identifica exatamente o conteúdo aceito (cliente, serviços, valores, condições e validade); qualquer alteração produziria outro hash. Registro feito pelo sistema de propostas da ${esc(S.tenant ? S.tenant.nome : '')}.</p></div>`;
+    ${L('Código de verificação', '<b>' + esc(a.codigo) + '</b>')}${L('Hash SHA-256 do conteúdo', '<span class="hash">' + esc(a.hash_documento) + '</span>')}
+    ${a.foto_hash ? L('Foto com documento', (a.foto && op.fotos ? `<img src="${esc(a.foto)}" alt="Foto do signatário com o documento" class="ass-foto"><br>` : 'registrada — ') + '<span class="hash">SHA-256 ' + esc(a.foto_hash) + '</span>') : ''}</table>
+    <p><b>Declaração:</b> ${esc(a.declaracao)}</p></div>`; };
+  const hashes = [...new Set(lista.map(a => a.hash_documento))];
+  return `<div class="comprovante"><h3 style="margin-top:0">COMPROVANTE DE ASSINATURA ELETRÔNICA</h3>
+    <p>Proposta de Honorários nº ${esc(numeroFmt(p))} — ${esc(p.cliente_nome)} · ${lista.length} assinatura${lista.length>1?'s':''}${hashes.length===1 && lista.length>1 ? ' sobre o mesmo conteúdo (mesmo hash)' : ''}.</p>
+    ${lista.map(bloco).join('')}
+    <p style="font-size:9pt">O hash identifica exatamente o conteúdo aceito (cliente, serviços, valores, condições e validade); qualquer alteração produziria outro hash. Registro feito pelo sistema de propostas da ${esc(S.tenant ? S.tenant.nome : '')}.</p></div>`;
 }
 function baixar(nome, conteudo, tipo){ const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([conteudo], { type:tipo })); a.download = nome; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); }
 function nomeArquivo(p){ return 'Proposta_' + (p.numero ? numeroFmt(p).replace('/','-') + '_' : '') + p.cliente_nome.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^A-Za-z0-9]+/g,'_').slice(0,50); }
@@ -1025,16 +1149,45 @@ const ACOES = {
   previa(){ const F = leF(); const er = validarProposta(F); if(er.length){ toast(er[0], true); return; } S.docPrevia = JSON.parse(JSON.stringify(F)); ir('documento'); },
   voltarForm(){ S.docPrevia = null; ir('form'); },
   imprimir(){ window.print(); },
-  async gerarLink(){ const p = S.propostas.find(x => x.id===S.docId); if(!p) return; const era = p.status;
-    const tinha = !!document.querySelector('[data-act="cancelarLink"]');
-    if(tinha && !confirm('Gerar um link novo cancela o anterior: o endereço que o cliente já recebeu deixa de funcionar. Continuar?')) return;
-    await tenta(async () => { const r = await DB.criarLink(p.id); S._linkNovo = { id:p.id, r }; VIEWS.documento(); toast(era==='rascunho' ? 'Link gerado. A proposta passou para Enviada.' : 'Link gerado.'); }); },
   async reabrir(){ const p = S.propostas.find(x => x.id===S.docId); if(!p) return;
     if(!confirm(`Voltar a proposta ${numeroFmt(p)} de ${STATUS[p.status]} para Enviada? A mudança fica registrada no histórico.`)) return;
-    await tenta(async () => { await DB.alterar('propostas', p.id, { status:'enviada' }); toast('Proposta reaberta como Enviada. Agora é possível gerar o link do cliente.'); VIEWS.documento(); }); },
-  async cancelarLink(){ if(!confirm('Cancelar o link? O endereço que o cliente recebeu deixa de funcionar.')) return;
-    await tenta(async () => { await DB.revogarLink(S.docId); S._linkNovo = null; toast('Link cancelado.'); VIEWS.documento(); }); },
-  async copiarUrlCli(){ const i = $('urlCli'); try{ await navigator.clipboard.writeText(i.value); toast('Endereço copiado. Envie ao cliente.'); }catch(e){ i.select(); document.execCommand('copy'); toast('Endereço copiado.'); } },
+    await tenta(async () => { await DB.alterar('propostas', p.id, { status:'enviada' }); toast('Proposta reaberta como Enviada.'); VIEWS.documento(); }); },
+  sigEditar(el){ dlgSignatario(el.dataset.id); },
+  async sigSalvar(el){
+    const row = { nome:$('g_nome').value.trim().replace(/\s+/g,' '), qualidade:$('g_qual').value.trim()||null, email:$('g_email').value.trim().toLowerCase()||null, celular:$('g_cel').value.replace(/\D/g,'')||null };
+    if(row.nome.length<5 || !row.nome.includes(' ')){ toast('Informe o nome completo do signatário.', true); return; }
+    if(!row.email && !row.celular){ toast('Informe o e-mail ou o celular.', true); return; }
+    if(row.email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(row.email)){ toast('E-mail inválido.', true); return; }
+    if(row.celular && !/^\d{10,13}$/.test(row.celular)){ toast('Celular inválido. Use DDD + número, só dígitos.', true); return; }
+    if(!el.dataset.id){ row.proposta_id = S.docId; row.ordem = S.doc.sigs.length + 1; }
+    await tenta(async () => { await DB.salvarSignatario(el.dataset.id || null, row); $('dlg').close(); toast('Signatário salvo.'); VIEWS.documento(); }); },
+  async sigRemover(el){ const s = S.doc.sigs.find(x => x.id===el.dataset.id); if(!s || !confirm(`Remover ${s.nome} dos signatários? O link dele, se houver, deixa de funcionar.`)) return;
+    await tenta(async () => { await DB.salvarSignatario(s.id, { excluido_em:new Date().toISOString() }); await DB.recarregar(S.docId); toast('Signatário removido.'); VIEWS.documento(); }); },
+  async sigCancelar(el){ if(!confirm('Cancelar o link desta pessoa? O endereço que ela recebeu deixa de funcionar.')) return;
+    await tenta(async () => { await DB.revogarUm(el.dataset.id, 'assinatura'); toast('Link cancelado.'); VIEWS.documento(); }); },
+  async sigEnviar(el){ const p = S.propostas.find(x => x.id===S.docId), s = S.doc.sigs.find(x => x.id===el.dataset.id); if(!p || !s) return;
+    const { tipo, canal } = el.dataset, tinha = S.doc.links.some(l => l.signatario_id===s.id && l.tipo===tipo);
+    if(tinha && tipo==='assinatura' && !confirm('Já existe um link enviado a esta pessoa. Enviar outro cancela o anterior. Continuar?')) return;
+    const janela = canal==='whatsapp' ? window.open('about:blank', '_blank') : null;      // aberta já no clique, senão o navegador bloqueia
+    el.disabled = true;
+    const ok = await tenta(async () => { await enviarLink(p, s, tipo, canal, janela); await DB.recarregar(p.id); return true; });
+    if(!ok && janela) janela.close();
+    if(ok) toast(canal==='email' ? `E-mail enviado para ${s.email}.` : 'WhatsApp aberto com a mensagem pronta: confira o contato e envie.');
+    VIEWS.documento(); },
+  async sigEnviarTodos(){ const p = S.propostas.find(x => x.id===S.docId); if(!p) return; const falhas = []; let n = 0;
+    const alvo = S.doc.sigs.filter(s => s.email && !S.doc.ass.some(a => a.signatario_id===s.id) && !S.doc.links.some(l => l.signatario_id===s.id && l.tipo==='assinatura'));
+    for(const s of alvo){ try{ await enviarLink(p, s, 'assinatura', 'email'); n++; }catch(e){ falhas.push(`${s.nome}: ${e.message}`); } }
+    await DB.recarregar(p.id).catch(() => {});
+    if(falhas.length) toast('Não enviado para ' + falhas.join(' | '), true); else toast(`E-mail enviado a ${n} signatário${n===1?'':'s'}.`);
+    VIEWS.documento(); },
+  async viaTodos(){ const p = S.propostas.find(x => x.id===S.docId); if(!p) return; await tenta(async () => { await enviarViaATodos(p); await DB.recarregar(p.id); }); VIEWS.documento(); },
+  escAssinar(){ dlgEscritorio(); },
+  async escConfirmar(){ const p = S.propostas.find(x => x.id===S.docId), nome = $('x_nome').value.trim().replace(/\s+/g,' '), cpf = soDoc($('x_cpf').value);
+    if(nome.length<5 || !nome.includes(' ')){ toast('Informe o nome completo.', true); return; } if(!cpfValido(cpf)){ toast('CPF inválido.', true); return; } if(!$('x_ok').checked){ toast('Marque a declaração para assinar.', true); return; }
+    await tenta(async () => { const r = await DB.escritorioAssinar(p.id, nome, cpf); $('dlg').close();
+      if(r.concluida){ toast('Assinado. Todas as assinaturas concluídas: enviando a via aos signatários…'); const p2 = S.propostas.find(x => x.id===p.id); await enviarViaATodos(p2, true); await DB.recarregar(p.id); }
+      else toast('Assinatura do escritório registrada. Falta a assinatura dos clientes.');
+      VIEWS.documento(); }); },
   async copiarLink(){ const url = location.href.split('#')[0] + '#/proposta/' + S.docId; try{ await navigator.clipboard.writeText(url); toast('Link da proposta copiado.'); }catch(e){ prompt('Copie o link da proposta:', url); } },
   word(){ const p = S.docPrevia || S.propostas.find(x => x.id===S.docId) || S.docCliente; baixar(nomeArquivo(p) + '.doc', '\ufeff' + wordHTML(p), 'application/msword'); },
   salvarProposta(){ salvarProposta(); },
@@ -1064,7 +1217,8 @@ const ACOES = {
     await tenta(async () => { await DB.alterar('servicos', s.id, { excluido_em:new Date().toISOString() }); toast('Serviço excluído.'); ir('servicos'); }); },
   async salvarEscritorio(){
     const e = { ...esc_() }; document.querySelectorAll('[data-e]').forEach(i => e[i.dataset.e] = i.value.trim());
-    e.dia_vencimento = Math.min(31, Math.max(1, parseInt(e.dia_vencimento)||20)); e.validade_dias = Math.max(1, parseInt(e.validade_dias)||10); e.valor_funcionario = parseValor(e.valor_funcionario);
+    e.dia_vencimento = Math.min(31, Math.max(1, parseInt(e.dia_vencimento)||20)); e.validade_dias = Math.max(1, parseInt(e.validade_dias)||10); e.valor_funcionario = parseValor(e.valor_funcionario); e.cpf_responsavel = soDoc(e.cpf_responsavel || '');
+    if(e.cpf_responsavel && !cpfValido(e.cpf_responsavel)){ toast('CPF de quem assina pelo escritório está inválido.', true); return; }
     await tenta(async () => { await DB.salvarEscritorio(e); toast('Dados do escritório salvos.'); ir('escritorio'); });
   },
   backup(){ baixar(`backup_propostas_${hojeISO()}.json`, JSON.stringify({ app:'artecon-propostas', versao:APP_VERSION, gerado_em:new Date().toISOString(), tenant:S.tenant, clientes:S.clientes, servicos:S.servicos, propostas:S.propostas }, null, 2), 'application/json'); },
@@ -1086,10 +1240,12 @@ document.addEventListener('input', ev => {
 });
 document.addEventListener('change', async ev => {
   const el = ev.target;
+  if(el.id==='incFotos'){ const p = S.propostas.find(x => x.id===S.docId); if(p) $('docArea').innerHTML = docHTML(p, S.doc.ass, { fotos:el.checked }); return; }
   if(el.id==='filtroStatus'){ S.filtroStatus = el.value; listarPropostas(); return; }
   if(el.dataset.status){ const id = el.dataset.status, novo = el.value; const r = await tenta(async () => { await DB.alterar('propostas', id, { status:novo }); toast('Status atualizado para ' + STATUS[novo] + '.'); return true; }); listarPropostas(); if(!r) return; return; }
   if(!S.F) return;
   if(el.id==='addCatalogo' && el.value){ const s = S.servicos.find(x => x.id===el.value); if(s) S.F.itens.push({ nome:s.nome, descricao:s.descricao||'', tipo:s.tipo, valor:+s.valor_padrao||0, qtd:0 }); el.value = ''; desenhaItens(); desenhaCondicoes(); return; }
+  if(el.id==='f_foto'){ S.F.exige_foto = el.checked; return; }
   if(el.dataset.c && el.type==='checkbox'){ S.F.condicoes[el.dataset.c] = el.checked; return; }
   if(el.dataset.f==='modelo'){ const antes = el.value==='pontual' ? 'recorrente' : 'pontual';
     if(S.F.abertura===ABERTURA[antes]) S.F.abertura = ABERTURA[el.value]; if(S.F.assunto===ASSUNTO[antes]) S.F.assunto = ASSUNTO[el.value]; VIEWS.form(); return; }
@@ -1106,49 +1262,84 @@ const Cliente = { sb:null, token:null, dados:null,
     // sessão própria e vazia: mesmo que o navegador tenha alguém do escritório logado, aqui tudo roda como visitante
     this.sb = window.supabase.createClient(CFG.SUPABASE_URL, CFG.SUPABASE_ANON_KEY, { auth:{ persistSession:false, autoRefreshToken:false, detectSessionInUrl:false, storageKey:'prop-cliente' } }); },
   async ver(){ const { data, error } = await this.sb.rpc('prop_publico_ver', { p_token:this.token }); if(error) throw new Error('Não foi possível abrir a proposta agora. Tente de novo em instantes.'); this.dados = data; return data; },
-  async assinar(f){ const { data, error } = await this.sb.rpc('prop_publico_assinar', { p_token:this.token, p_nome:f.nome, p_cpf:f.cpf, p_email:f.email, p_cargo:f.cargo, p_hash:this.dados.hash, p_user_agent:navigator.userAgent }); if(error) throw new Error('Não foi possível registrar a assinatura agora. Tente de novo em instantes.'); return data; }
+  async assinar(f){ const { data, error } = await this.sb.rpc('prop_publico_assinar', { p_token:this.token, p_nome:f.nome, p_cpf:f.cpf, p_email:f.email, p_cargo:f.cargo, p_hash:this.dados.hash, p_user_agent:navigator.userAgent, p_foto:f.foto || null }); if(error) throw new Error('Não foi possível registrar a assinatura agora. Tente de novo em instantes.'); return data; }
 };
 function telaClienteErro(msg){ $('raiz').innerHTML = `<div class="login"><div class="cx"><img src="${LOGO}" alt="Artecon artes contábeis"><div class="erros" role="alert">${esc(msg)}</div></div></div>`; }
+/* reduz a foto no próprio aparelho: JPEG, lado maior até 1100 px, no máximo ~300 KB */
+function reduzFoto(arquivo){
+  return new Promise((ok, erro) => { const img = new Image(), url = URL.createObjectURL(arquivo);
+    img.onload = () => { try{ let q = 0.78, lado = 1100, saida = '';
+        for(let i=0;i<6;i++){ const k = Math.min(1, lado/Math.max(img.width, img.height)), c = document.createElement('canvas'); c.width = Math.round(img.width*k); c.height = Math.round(img.height*k);
+          const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0,0,c.width,c.height); g.drawImage(img,0,0,c.width,c.height); saida = c.toDataURL('image/jpeg', q); if(saida.length <= 400000) break; q -= 0.1; lado -= 120; }
+        URL.revokeObjectURL(url); saida.length <= 440000 && saida.startsWith('data:image/jpeg') ? ok(saida) : erro(new Error('Não foi possível reduzir a foto. Tente outra.')); }catch(e){ erro(new Error('Não foi possível ler a foto.')); } };
+    img.onerror = () => { URL.revokeObjectURL(url); erro(new Error('Este arquivo não é uma imagem que o navegador consiga abrir. Use JPG ou PNG.')); }; img.src = url; });
+}
+function avisoPrivacidade(r){
+  const e = r.escritorio, contato = e.email_privacidade || e.telefone || '';
+  return `<details class="privacidade"><summary>Como seus dados são tratados (LGPD)</summary>
+    <p><b>Quem trata:</b> ${esc(e.nome)}${e.cnpj ? ', CNPJ ' + esc(docFmt(e.cnpj)) : ''}${e.endereco ? ', ' + esc(e.endereco) : ''}</p>
+    <p><b>O que é registrado:</b> nome, CPF, e-mail e qualidade informados por você; endereço IP, navegador, data e hora; os acessos a este link${r.exige_foto ? '; e a foto sua com o documento' : ''}.</p>
+    <p><b>Para quê:</b> formalizar o aceite desta proposta e comprovar quem assinou e o que foi assinado (execução de procedimentos preliminares a contrato e exercício regular de direitos${r.exige_foto ? '; a foto, para prevenir fraude na identificação do signatário' : ''}). Os dados não são usados para publicidade.</p>
+    <p><b>Com quem:</b> ficam em serviços contratados pelo escritório para hospedar o sistema e enviar e-mails, que podem estar em servidores fora do Brasil. Só a direção do escritório vê o CPF completo, o IP e a foto.</p>
+    <p><b>Por quanto tempo:</b> ${esc(e.prazo_guarda || 'pelo prazo da relação contratual e pelos prazos legais de prescrição')}.</p>
+    <p><b>Seus direitos:</b> você pode pedir acesso, correção e informações sobre o tratamento${contato ? ' pelo contato ' + esc(contato) : ' ao escritório'}. O registro de uma proposta assinada é mantido enquanto for necessário para comprovar o aceite.</p></details>`;
+}
 async function telaCliente(){
   const r = await Cliente.ver(); if(!r.ok){ telaClienteErro(r.mensagem || 'Link inválido.'); return; }
-  const p = r.proposta, a = r.assinatura; S.tenant = { nome:r.escritorio.nome, escritorio:{ ...ESCRITORIO_PADRAO, ...r.escritorio } }; S.docCliente = p;
+  const p = r.proposta, leitura = r.tipo==='leitura', sg = r.signatario || {}; S.tenant = { nome:r.escritorio.nome, escritorio:{ ...ESCRITORIO_PADRAO, ...r.escritorio } }; S.docCliente = p;
   document.title = 'Proposta ' + numeroFmt(p) + ' | ' + r.escritorio.nome;
   let aceite;
-  if(a) aceite = `<h2>Proposta assinada</h2><p><b>${esc(a.nome)}</b> assinou em <b>${esc(dataHora(a.assinado_em))}</b>. Código de verificação <b>${esc(a.codigo)}</b>.</p><p>O comprovante está na última página do documento acima. Use “Salvar em PDF” para guardar a sua via.</p>`;
-  else if(!r.pode_assinar) aceite = `<h2>Aceite indisponível</h2><p>${r.motivo==='vencida' ? 'A validade desta proposta terminou em ' + esc(dataBR(p.validade)) + '. Peça a atualização ao escritório.' : 'Esta proposta não está aberta para aceite no momento. Fale com o escritório.'}</p>`;
-  else aceite = `<h2>Aceite eletrônico</h2><p>Leia a proposta acima. Para aceitar, identifique-se e assine. Quem assina precisa ter poderes para representar <b>${esc(p.cliente_nome)}</b>.</p>
+  if(leitura) aceite = `<h2>Via assinada</h2><p>Esta proposta foi assinada por todas as partes. O comprovante das ${r.assinaturas.length} assinaturas está na última página do documento acima. Use <b>Salvar em PDF / imprimir</b> para guardar a sua via. Este endereço é só de leitura e deixa de funcionar em 30 dias.</p>${avisoPrivacidade(r)}`;
+  else if(!r.pode_assinar) aceite = `<h2>Assinatura indisponível</h2><p>${r.motivo==='vencida' ? 'A validade desta proposta terminou em ' + esc(dataBR(p.validade)) + '. Peça a atualização ao escritório.' : r.motivo==='assinada' ? 'Sua assinatura já foi registrada.' : 'Esta proposta não está aberta para assinatura no momento. Fale com o escritório.'}</p>`;
+  else aceite = `<h2>Assinatura eletrônica</h2><p>Leia a proposta acima. Para aceitar, identifique-se e assine. Quem assina precisa ter poderes para representar <b>${esc(p.cliente_nome)}</b>.</p>
     <div id="cliErros"></div>
     <div class="grade">
-      <div class="campo"><label for="a_nome">Nome completo *</label><input type="text" id="a_nome" autocomplete="name"></div>
+      <div class="campo"><label for="a_nome">Nome completo *</label><input type="text" id="a_nome" autocomplete="name" value="${esc(sg.nome||'')}"></div>
       <div class="campo c1"><label for="a_cpf">CPF *</label><input type="text" id="a_cpf" inputmode="numeric" placeholder="000.000.000-00"></div>
-      <div class="campo c1"><label for="a_cargo">Qualidade</label><input type="text" id="a_cargo" placeholder="Sócio administrador, procurador…"></div>
-      <div class="campo c4"><label for="a_email">E-mail *</label><input type="email" id="a_email" autocomplete="email"></div>
+      <div class="campo c1"><label for="a_cargo">Qualidade</label><input type="text" id="a_cargo" placeholder="Sócio administrador, procurador…" value="${esc(sg.qualidade||'')}"></div>
+      <div class="campo c4"><label for="a_email">E-mail * <span class="dica">(a via assinada por todos será enviada para cá)</span></label><input type="email" id="a_email" autocomplete="email" value="${esc(sg.email||'')}"></div>
     </div>
-    <label class="marcar" style="margin-top:12px"><input type="checkbox" id="a_ok"> <span>Declaro que li e aceito integralmente os termos da Proposta de Honorários nº ${esc(numeroFmt(p))}, que tenho poderes para representar ${esc(p.cliente_nome)} neste ato e que reconheço esta assinatura eletrônica como válida e eficaz, nos termos do art. 10, § 2º, da Medida Provisória nº 2.200-2/2001. Estou ciente de que meu nome, CPF, e-mail, endereço IP, data e hora ficam registrados como evidência deste aceite.</span></label>
-    <div class="barra-salvar" style="margin-top:14px"><button class="btn primario" id="a_assinar">Assinar e aprovar a proposta</button></div>`;
+    ${r.exige_foto ? `<div class="foto-box"><b>Foto com documento *</b><p>Tire uma foto sua segurando, ao lado do rosto, um documento com foto (RG ou CNH). O rosto e o documento precisam estar nítidos.</p>
+      <input type="file" id="a_foto" accept="image/*" capture="user" hidden><button type="button" class="btn" id="a_fotoBtn">Tirar ou escolher a foto</button> <span id="a_fotoInfo" class="dica"></span><div id="a_fotoPrev"></div></div>` : ''}
+    <label class="marcar" style="margin-top:12px"><input type="checkbox" id="a_ok"> <span>Declaro que li e aceito integralmente os termos da Proposta de Honorários nº ${esc(numeroFmt(p))}, que tenho poderes para representar ${esc(p.cliente_nome)} neste ato e que reconheço esta assinatura eletrônica como válida e eficaz, nos termos do art. 10, § 2º, da Medida Provisória nº 2.200-2/2001. Estou ciente de que meu nome, CPF, e-mail, endereço IP, data e hora${r.exige_foto ? ' e a foto com meu documento' : ''} ficam registrados como evidência deste aceite.</span></label>
+    ${avisoPrivacidade(r)}
+    <div class="barra-salvar" style="margin-top:14px"><button class="btn primario" id="a_assinar">Assinar a proposta</button></div>`;
   $('raiz').innerHTML = `<div class="cliente">
-    <header class="cli-topo nao-imprime"><img src="${LOGO}" alt="${esc(r.escritorio.nome)}"><div class="cli-id"><b>Proposta nº ${esc(numeroFmt(p))}</b><span>${esc(p.cliente_nome)}</span></div>
-      <div class="acoes"><button class="btn" data-act="imprimir">Salvar em PDF / imprimir</button>${!a && r.pode_assinar ? '<a class="btn primario" href="#aceite" id="irAceite">Ir para o aceite</a>' : ''}</div></header>
-    <div class="doc-area" id="docArea">${docHTML(p, a)}</div>
+    <header class="cli-topo nao-imprime"><img src="${LOGO}" alt="${esc(r.escritorio.nome)}"><div class="cli-id"><b>Proposta nº ${esc(numeroFmt(p))}${leitura ? ' — via assinada' : ''}</b><span>${esc(p.cliente_nome)}</span></div>
+      <div class="acoes"><button class="btn" data-act="imprimir">Salvar em PDF / imprimir</button>${!leitura && r.pode_assinar ? '<a class="btn primario" href="#aceite" id="irAceite">Ir para a assinatura</a>' : ''}</div></header>
+    <div class="doc-area" id="docArea">${docHTML(p, r.assinaturas, {})}</div>
     <section class="cli-aceite nao-imprime" id="aceite">${aceite}</section></div>`;
-  const ir_ = $('irAceite'); if(ir_) ir_.onclick = ev => { ev.preventDefault(); $('aceite').scrollIntoView({ behavior:'smooth' }); $('a_nome').focus({ preventScroll:true }); };
+  const ir_ = $('irAceite'); if(ir_) ir_.onclick = ev => { ev.preventDefault(); $('aceite').scrollIntoView({ behavior:'smooth' }); };
   const cpfEl = $('a_cpf'); if(cpfEl) cpfEl.onchange = () => { cpfEl.value = docFmt(cpfEl.value); };
+  let foto = null; const fi = $('a_foto');
+  if(fi){ $('a_fotoBtn').onclick = () => fi.click();
+    fi.onchange = async () => { const arq = fi.files && fi.files[0]; if(!arq) return; $('a_fotoInfo').textContent = 'Preparando a foto…';
+      try{ foto = await reduzFoto(arq); $('a_fotoPrev').innerHTML = `<img src="${foto}" alt="Prévia da foto com o documento">`; $('a_fotoInfo').textContent = 'Foto pronta. Confira se o rosto e o documento estão legíveis; se não, tire outra.'; $('a_fotoBtn').textContent = 'Tirar outra foto'; }
+      catch(e){ foto = null; $('a_fotoPrev').innerHTML = ''; $('a_fotoInfo').textContent = e.message; } fi.value = ''; }; }
   const b = $('a_assinar'); if(b) b.onclick = async () => {
-    const f = { nome:$('a_nome').value.trim().replace(/\s+/g,' '), cpf:soDoc($('a_cpf').value), email:$('a_email').value.trim(), cargo:$('a_cargo').value.trim() }, er = [];
+    const f = { nome:$('a_nome').value.trim().replace(/\s+/g,' '), cpf:soDoc($('a_cpf').value), email:$('a_email').value.trim(), cargo:$('a_cargo').value.trim(), foto }, er = [];
     if(f.nome.length < 5 || !f.nome.includes(' ')) er.push('Informe o nome completo.');
     if(f.cpf.length !== 11 || !cpfValido(f.cpf)) er.push('CPF inválido. Confira os dígitos.');
     if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(f.email)) er.push('Informe um e-mail válido.');
+    if(r.exige_foto && !foto) er.push('Tire a foto com o documento.');
     if(!$('a_ok').checked) er.push('Marque a declaração para assinar.');
-    const mostra = l => { $('cliErros').innerHTML = l.length ? `<div class="erros" role="alert"><ul style="margin:0;padding-left:18px">${l.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>` : ''; };
+    const mostra = l => { $('cliErros').innerHTML = l.length ? `<div class="erros" role="alert"><ul style="margin:0;padding-left:18px">${l.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>` : ''; if(l.length) $('cliErros').scrollIntoView({ block:'center' }); };
     mostra(er); if(er.length) return;
     b.disabled = true; b.textContent = 'Registrando a assinatura…';
     try{ const x = await Cliente.assinar(f);
-      if(x.ok){ await telaCliente(); toast('Assinatura registrada. Obrigado!'); $('aceite').scrollIntoView(); return; }
+      if(x.ok){ const a = $('aceite'); a.innerHTML = `<h2>Assinatura registrada</h2><p>Obrigado, <b>${esc(f.nome)}</b>. Sua assinatura foi registrada em ${esc(dataHora(new Date().toISOString()))}. Código de verificação: <b>${esc(x.codigo)}</b>.</p>
+          <p>${x.concluida ? 'Com a sua assinatura, a proposta ficou assinada por todos. Você receberá por e-mail, em ' + esc(f.email) + ', o endereço da via completa para impressão.' : 'Assim que as demais partes assinarem, você receberá por e-mail, em ' + esc(f.email) + ', o endereço da via completa, com todas as assinaturas, para impressão.'}</p>
+          <p class="dica">Por segurança, este link foi encerrado e não abre mais.</p>`; const t = $('irAceite'); if(t) t.remove(); a.scrollIntoView({ block:'center' }); return; }
       mostra([x.mensagem || 'Não foi possível assinar.']); if(x.erro==='alterada'){ b.textContent = 'Recarregar a proposta'; b.disabled = false; b.onclick = () => telaCliente(); return; }
     }catch(e){ mostra([e.message]); }
-    b.disabled = false; b.textContent = 'Assinar e aprovar a proposta';
+    b.disabled = false; b.textContent = 'Assinar a proposta';
   };
 }
+
+/* em tela estreita (celular) a folha A4 encolhe para caber na largura, sem rolagem lateral; na impressão volta a 100% */
+function ajustaFolha(){ const a = document.getElementById('docArea'); if(!a) return; const z = Math.min(1, (a.clientWidth - 16) / 794); document.documentElement.style.setProperty('--zf', z > 0 ? z.toFixed(3) : 1); if(z < 1) a.style.padding = '8px'; else a.style.padding = ''; }
+window.addEventListener('resize', ajustaFolha);
+new MutationObserver(ajustaFolha).observe(document.getElementById('raiz'), { childList:true, subtree:true });
 
 /* ===================== INÍCIO ===================== */
 function telaLogin(msg){
