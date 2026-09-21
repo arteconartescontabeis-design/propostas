@@ -472,9 +472,13 @@ function etapaAtual(p){
 const CFG = { SUPABASE_URL:'https://yeujqjtjqtegsnzwwazb.supabase.co', SUPABASE_ANON_KEY:'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlldWpxanRqcXRlZ3Nuend3YXpiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1NDE0OTksImV4cCI6MjEwMTExNzQ5OX0.5p1_wJ_aApJpRrN6tFu8qmAytK5FMXWt1soCubpzqao' };
 const SUPABASE_JS = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js';
 
-const APP_VERSION = '1.3.0';
+const APP_VERSION = '1.3.1';
 const PORTAL_URL = 'https://arteconartescontabeis-design.github.io/portal/';
 const CHANGELOG = [
+  { v:'1.3.1', data:'21/09/2026', itens:[
+    'O botão “Copiar link interno” voltou a aparecer em todas as propostas, inclusive aprovadas, perdidas e assinadas (na v1.3.0 ele sumia junto com o link do cliente).',
+    'Proposta aprovada ou perdida sem assinatura ganhou o botão “Reabrir como Enviada”, para poder gerar o link do cliente sem sair da tela.'
+  ]},
   { v:'1.3.0', data:'20/09/2026', itens:[
     'Link para o cliente: abre só a proposta (sem menu, sem login), com botão de PDF e o aceite no fim da página. O link interno, que abre o app inteiro, continua existindo para uso do escritório.',
     'Assinatura eletrônica pelo próprio link: o cliente informa nome, CPF, e-mail e qualidade, aceita a declaração e assina. Ficam registrados data e hora, IP, navegador, o hash SHA-256 do conteúdo e um código de verificação; o comprovante passa a fazer parte do PDF.',
@@ -814,8 +818,8 @@ function urlCliente(token){ return location.href.split('#')[0] + '#/c/' + token;
 function desenhaLinkCliente(p, link, ass, novo){
   const el = $('linkCliente'); if(!el) return;
   if(!MODO_NUVEM){ el.innerHTML = '<p class="dica">Disponível com o app ligado ao banco. No modo local não há link nem assinatura.</p>'; return; }
-  if(ass){ el.innerHTML = `<p style="margin:0"><b>${esc(ass.nome)}</b>${ass.cargo ? ' (' + esc(ass.cargo) + ')' : ''} assinou em <b>${esc(dataHora(ass.assinado_em))}</b>. Código de verificação <b>${esc(ass.codigo)}</b>. O comprovante está na última página do documento abaixo e sai no PDF.</p>`; return; }
-  if(p.status==='aprovada' || p.status==='perdida'){ el.innerHTML = '<p class="dica" style="margin:0">Proposta aprovada ou perdida não recebe link. Volte o status para Enviada ou Em negociação se precisar do aceite do cliente.</p>'; return; }
+  if(ass){ el.innerHTML = `<p style="margin:0"><b>${esc(ass.nome)}</b>${ass.cargo ? ' (' + esc(ass.cargo) + ')' : ''} assinou em <b>${esc(dataHora(ass.assinado_em))}</b>. Código de verificação <b>${esc(ass.codigo)}</b>. O comprovante está na última página do documento abaixo e sai no PDF.</p><div class="filtros" style="margin:10px 0 0"><button class="btn" data-act="copiarLink" title="Abre o app inteiro e pede login: só para quem é do escritório">Copiar link interno</button></div>`; return; }
+  if(p.status==='aprovada' || p.status==='perdida'){ el.innerHTML = '<p class="dica" style="margin:0">Proposta aprovada ou perdida não recebe link. Para o cliente assinar pelo link, a proposta precisa estar Enviada ou Em negociação.</p><div class="filtros" style="margin:10px 0 0"><button class="btn primario" data-act="reabrir">Reabrir como Enviada</button><button class="btn" data-act="copiarLink" title="Abre o app inteiro e pede login: só para quem é do escritório">Copiar link interno</button></div>'; return; }
   let h = '';
   if(novo){ const url = urlCliente(novo.token), msg = `Olá! Segue a Proposta de Honorários nº ${numeroFmt(p)} da ${S.tenant.nome} para leitura e aceite eletrônico: ${url}`;
     h += `<div class="linkbox"><label for="urlCli" class="rotulo">Endereço para enviar ao cliente — copie agora: por segurança ele não fica guardado e não aparece de novo</label>
@@ -1025,6 +1029,9 @@ const ACOES = {
     const tinha = !!document.querySelector('[data-act="cancelarLink"]');
     if(tinha && !confirm('Gerar um link novo cancela o anterior: o endereço que o cliente já recebeu deixa de funcionar. Continuar?')) return;
     await tenta(async () => { const r = await DB.criarLink(p.id); S._linkNovo = { id:p.id, r }; VIEWS.documento(); toast(era==='rascunho' ? 'Link gerado. A proposta passou para Enviada.' : 'Link gerado.'); }); },
+  async reabrir(){ const p = S.propostas.find(x => x.id===S.docId); if(!p) return;
+    if(!confirm(`Voltar a proposta ${numeroFmt(p)} de ${STATUS[p.status]} para Enviada? A mudança fica registrada no histórico.`)) return;
+    await tenta(async () => { await DB.alterar('propostas', p.id, { status:'enviada' }); toast('Proposta reaberta como Enviada. Agora é possível gerar o link do cliente.'); VIEWS.documento(); }); },
   async cancelarLink(){ if(!confirm('Cancelar o link? O endereço que o cliente recebeu deixa de funcionar.')) return;
     await tenta(async () => { await DB.revogarLink(S.docId); S._linkNovo = null; toast('Link cancelado.'); VIEWS.documento(); }); },
   async copiarUrlCli(){ const i = $('urlCli'); try{ await navigator.clipboard.writeText(i.value); toast('Endereço copiado. Envie ao cliente.'); }catch(e){ i.select(); document.execCommand('copy'); toast('Endereço copiado.'); } },
