@@ -1,4 +1,3 @@
-[index 1.1.0.html](https://github.com/user-attachments/files/32448526/index.1.1.0.html)
 <!doctype html>
 <html lang="pt-BR">
 <head>
@@ -389,11 +388,18 @@ function validarProposta(p){
    Em branco, o app roda em MODO LOCAL (dados só neste navegador, para teste).
    Use a Legacy anon key (a sb_publishable_ não funciona com o supabase-js v2).
    ===================================================================== */
-const CFG = { SUPABASE_URL:'', SUPABASE_ANON_KEY:'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlldWpxanRqcXRlZ3Nuend3YXpiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1NDE0OTksImV4cCI6MjEwMTExNzQ5OX0.5p1_wJ_aApJpRrN6tFu8qmAytK5FMXWt1soCubpzqao' };
+const CFG = { SUPABASE_URL:'https://yeujqjtjqtegsnzwwazb.supabase.co', SUPABASE_ANON_KEY:'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlldWpxanRqcXRlZ3Nuend3YXpiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1NDE0OTksImV4cCI6MjEwMTExNzQ5OX0.5p1_wJ_aApJpRrN6tFu8qmAytK5FMXWt1soCubpzqao' };
 const SUPABASE_JS = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js';
 
-const APP_VERSION = '1.1.0';
+const APP_VERSION = '1.1.2';
 const CHANGELOG = [
+  { v:'1.1.2', data:'20/09/2026', itens:[
+    'App já sai ligado ao banco do escritório (projeto cobranca-pro), sem precisar editar o arquivo.',
+    'Se a configuração estiver pela metade (só a URL ou só a chave), o app avisa na tela em vez de abrir calado em modo local.'
+  ]},
+  { v:'1.1.1', data:'20/09/2026', itens:[
+    'Preparado para dividir o projeto Supabase com o Cobrança Pro: o “Sair” encerra só a sessão deste navegador, sem derrubar o robô nem as sessões abertas em outras máquinas.'
+  ]},
   { v:'1.1.0', data:'20/09/2026', itens:[
     'Documento passa a usar a arte do modelo oficial da Artecon: capa com as fotos e o azul do modelo, cabeçalho com a logo e a faixa, e rodapé com a curva em todas as páginas.',
     'Miolo no padrão do modelo: Arial 12, margens de 30 mm à esquerda e 15 mm à direita, texto justificado, assinatura centralizada e linha de assunto com “para” (mensal) ou “–” (pontual).',
@@ -413,6 +419,7 @@ const CHANGELOG = [
 ];
 
 const MODO_NUVEM = !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY);
+const CFG_INCOMPLETA = !MODO_NUVEM && !!(CFG.SUPABASE_URL || CFG.SUPABASE_ANON_KEY);
 const TAB = { clientes:'prop_clientes', servicos:'prop_servicos', propostas:'prop_propostas' };
 const ESCRITORIO_PADRAO = { endereco:'R. Livorno, nº 15 - Sala 101, Pagani, Palhoça/SC.', cidade:'Palhoça/SC', telefone:'(48) 3242-0530', site:'www.artecon.cnt.br', instagram:'@arteconartescontábeis', frase:'O sucesso da sua empresa depende das escolhas que você faz hoje', responsavel:'Cleiver Gonçalves', registro:'CRC/SC 030.315/O-2', dia_vencimento:20, indice:'IGP-M/FGV', valor_funcionario:70.96, validade_dias:10 };
 const ABERTURA = {
@@ -488,7 +495,7 @@ const Nuvem = {
     return data.session ? 'ok' : 'login';
   },
   async entrar(email, senha){ const { error } = await this.sb.auth.signInWithPassword({ email, password:senha }); if(error) throw new Error(error.message === 'Invalid login credentials' ? 'E-mail ou senha incorretos.' : error.message); },
-  async sair(){ await this.sb.auth.signOut(); },
+  async sair(){ await this.sb.auth.signOut({ scope:'local' }); },   // só este navegador: não derruba o robô nem outras máquinas
   erro(e){
     const m = (e && e.message) || String(e);
     if(/PROP00\d/.test(m)){ const t = m.replace(/^.*PROP00\d:\s*/,''); return new Error(t.charAt(0).toUpperCase() + t.slice(1) + '.'); }
@@ -913,6 +920,7 @@ async function abrir(){
   moldura(); ir('painel');
 }
 (async () => {
+  if(CFG_INCOMPLETA){ $('raiz').innerHTML = `<div class="login"><div class="cx"><div class="erros" role="alert"><b>Configuração incompleta.</b><br>No <code>const CFG</code> falta ${CFG.SUPABASE_URL ? 'a chave (SUPABASE_ANON_KEY)' : 'o endereço do projeto (SUPABASE_URL)'}. Preencha os dois campos e publique de novo.</div></div></div>`; return; }
   try{ const r = await DB.boot(); if(r==='login') telaLogin(); else await abrir(); }
   catch(e){ console.error(e); $('raiz').innerHTML = `<div class="login"><div class="cx"><div class="erros" role="alert"><b>O app não abriu.</b><br>${esc(e.message || e)}</div></div></div>`; }
 })();
