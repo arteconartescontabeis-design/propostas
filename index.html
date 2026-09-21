@@ -116,6 +116,35 @@ dialog h2{font:700 20px var(--titulo);margin:0 0 16px;color:var(--cinza)}
 .versoes ul{margin:6px 0 22px;padding-left:20px}
 .versoes li{margin:4px 0}
 
+/* ---------- controle, histórico, link e página do cliente (v1.3.0) ---------- */
+.etapas{display:flex;flex-wrap:wrap;gap:0;border:1px solid var(--linha)}
+.etapas div{padding:9px 16px;border-right:1px solid var(--linha);flex:1;min-width:150px}
+.etapas div:last-child{border-right:0}
+.etapas span{display:block;font-size:12px;color:var(--suave)}
+.etapas b{font-variant-numeric:tabular-nums;color:var(--cinza)}
+.linha-tempo li{border-left-color:var(--linha)}
+.linha-tempo .lt-quando{display:inline-block;min-width:150px;font-variant-numeric:tabular-nums;color:var(--cinza);font-weight:700}
+.linha-tempo small{color:var(--suave)}
+.linha-tempo .lt-assinada{border-left-color:var(--verde)}
+.linha-tempo .lt-alteracao{border-left-color:var(--amarelo)}
+.linha-tempo .lt-cliente_abriu,.linha-tempo .lt-link_gerado{border-left-color:var(--ciano)}
+.linha-tempo .dif{margin:4px 0 0 150px;padding-left:16px;color:var(--suave);font-size:12.5px}
+.linha-tempo .dif li{border:0;padding:1px 0;font-size:12.5px}
+.linkbox{border:1px solid var(--ciano);background:#f0fafe;padding:12px 14px}
+.cliente{min-height:100vh;background:#e9eef0}
+.cli-topo{position:sticky;top:0;z-index:5;background:#fff;border-bottom:6px solid var(--amarelo);display:flex;align-items:center;gap:18px;padding:10px 22px;flex-wrap:wrap}
+.cli-topo img{height:46px}
+.cli-id{flex:1;min-width:180px}.cli-id b{display:block;font:700 18px var(--titulo);color:var(--cinza)}.cli-id span{color:var(--suave)}
+.cli-topo .btn{text-decoration:none;display:inline-block}
+.cli-aceite{max-width:210mm;margin:0 auto 40px;background:#fff;border:1px solid var(--linha);border-top:6px solid var(--verde);padding:24px 28px}
+.cli-aceite h2{font:700 22px var(--titulo);margin:0 0 10px;color:var(--cinza)}
+.comprovante{break-before:page;page-break-before:always;padding-top:2mm}
+.comprovante table{width:100%;border-collapse:collapse;margin:0 0 5mm}
+table.miolo .comprovante th,table.miolo .comprovante td{border:.2mm solid #999;padding:1.6mm 2.5mm;text-align:left;vertical-align:top;font-size:10pt}
+table.miolo .comprovante th{width:48mm;background:#f2f4f5;font-weight:700}
+.comprovante .hash{font-family:Consolas,'Courier New',monospace;font-size:8.5pt;word-break:break-all}
+.comprovante p{font-size:10pt}
+
 /* ---------- login ---------- */
 .login{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
 .login .cx{background:#fff;border:1px solid var(--linha);border-top:8px solid var(--amarelo);padding:34px;width:min(400px,100%)}
@@ -161,6 +190,7 @@ table.miolo td{padding:0}
   .principal{padding:22px 16px 50px}
   .indicadores{grid-template-columns:repeat(2,1fr)}.ind{margin:-1px 0 0 -1px}
   .duas{grid-template-columns:1fr}
+  .linha-tempo .lt-quando{display:block}.linha-tempo .dif{margin-left:0}
   .grade{grid-template-columns:1fr 1fr}.campo,.campo.c1{grid-column:span 2}
   .item{grid-template-columns:1fr 1fr}.item.cab{display:none}
 }
@@ -168,6 +198,7 @@ table.miolo td{padding:0}
 @media print{
   body{background:#fff}
   .lateral,.topo,.painel,.toast,.nao-imprime{display:none!important}
+  .cliente{background:#fff}
   .principal{padding:0}
   .doc-area{background:#fff;padding:0;overflow:visible}
   .folha{box-shadow:none;margin:0}
@@ -381,6 +412,55 @@ function validarProposta(p){
   return er;
 }
 
+/* ----- controle: data/hora e descrição legível das alterações ----- */
+function dataHora(iso){
+  if(!iso) return '';
+  const d = new Date(iso); if(isNaN(d)) return '';
+  const f = new Intl.DateTimeFormat('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:false}).formatToParts(d).reduce((a,x)=>(a[x.type]=x.value,a),{});
+  return `${f.day}/${f.month}/${f.year} às ${f.hour}:${f.minute}`;
+}
+const ROTULO_CAMPO = { cliente_nome:'Cliente', cliente_documento:'CNPJ/CPF', contato:'Responsável', tratamento:'Tratamento', modelo:'Modelo', assunto:'Assunto', abertura:'Parágrafo de abertura', itens:'Serviços', condicoes:'Condições', total_mensal:'Total mensal', total_pontual:'Total pontual', validade:'Validade', observacoes:'Anotações internas', excluido_em:'Exclusão' };
+const ROTULO_COND = { dia_vencimento:'Dia de vencimento', indice:'Índice de reajuste', adicional_anual:'Adicional anual', revisao_bimestral:'Revisão bimestral', taxas_abertura:'Cláusula das taxas de abertura', prolabore_sem_custo:'Pró-labore sem custo', parcelas:'Parcelas', prazo_dias:'Prazo de execução (dias)', prazo_marco:'Contagem do prazo', adicionais:'Cláusulas adicionais', aceite:'Termo de aceite' };
+function _curto(v){ const t = String(v ?? '').replace(/\s+/g,' ').trim(); return t ? (t.length>70 ? '“' + t.slice(0,70) + '…”' : '“' + t + '”') : '(vazio)'; }
+function _simNao(v){ return v===true ? 'sim' : v===false ? 'não' : (v===null || v===undefined || v==='' ? '(vazio)' : String(v)); }
+function _itemTxt(i){ return `“${i.nome}” ${brl(i.valor)}${i.tipo==='por_funcionario' ? ' por funcionário' + ((parseInt(i.qtd)||0) ? ' × ' + parseInt(i.qtd) : '') : i.tipo==='pontual' ? ' (pontual)' : '/mês'}`; }
+function descreveAlteracao(det){
+  const a = det.antes || {}, d = det.depois || {}, out = [];
+  (det.campos || []).forEach(k => {
+    const x = a[k], y = d[k];
+    if(k==='total_mensal' || k==='total_pontual') out.push(`${ROTULO_CAMPO[k]}: ${brl(x)} → ${brl(y)}`);
+    else if(k==='validade') out.push(`Validade: ${x ? dataBR(x) : '(sem data)'} → ${y ? dataBR(y) : '(sem data)'}`);
+    else if(k==='cliente_documento') out.push(`CNPJ/CPF: ${docFmt(x) || '(vazio)'} → ${docFmt(y) || '(vazio)'}`);
+    else if(k==='modelo') out.push(`Modelo: ${x==='pontual'?'pontual':'mensal'} → ${y==='pontual'?'pontual':'mensal'}`);
+    else if(k==='excluido_em') out.push(y ? 'Proposta excluída' : 'Proposta restaurada');
+    else if(k==='itens'){
+      const A = Array.isArray(x) ? x : [], B = Array.isArray(y) ? y : [], usados = new Set();
+      B.forEach(n => { const i = A.findIndex((o,ix) => !usados.has(ix) && o.nome===n.nome);
+        if(i<0) out.push('Serviço incluído: ' + _itemTxt(n));
+        else { usados.add(i); const o = A[i]; if(JSON.stringify([o.tipo,+o.valor||0,parseInt(o.qtd)||0,o.descricao||'']) !== JSON.stringify([n.tipo,+n.valor||0,parseInt(n.qtd)||0,n.descricao||''])) out.push(`Serviço alterado: ${_itemTxt(o)} → ${_itemTxt(n)}` + ((o.descricao||'')!==(n.descricao||'') ? ' (descrição alterada)' : '')); } });
+      A.forEach((o,ix) => { if(!usados.has(ix)) out.push('Serviço removido: ' + _itemTxt(o)); });
+    }
+    else if(k==='condicoes'){
+      const A = x || {}, B = y || {};
+      [...new Set([...Object.keys(A), ...Object.keys(B)])].forEach(c => {
+        if(JSON.stringify(A[c] ?? null) === JSON.stringify(B[c] ?? null)) return;
+        if(c==='parcelas') out.push(`Parcelas: ${(A[c]||[]).length} → ${(B[c]||[]).length} (${(B[c]||[]).map(p => brl(p.valor)).join(' + ') || 'sem parcelas'})`);
+        else if(c==='adicionais' || c==='prazo_marco') out.push(`${ROTULO_COND[c] || c}: ${_curto(A[c])} → ${_curto(B[c])}`);
+        else out.push(`${ROTULO_COND[c] || c}: ${_simNao(A[c])} → ${_simNao(B[c])}`);
+      });
+    }
+    else out.push(`${ROTULO_CAMPO[k] || k}: ${_curto(x)} → ${_curto(y)}`);
+  });
+  return out;
+}
+function etapaAtual(p){
+  if(p.assinada_em) return ['Assinada pelo cliente', p.assinada_em];
+  if(p.status==='aprovada' && p.aprovada_em) return ['Aprovada', p.aprovada_em];
+  if(p.status==='perdida' && p.perdida_em) return ['Perdida', p.perdida_em];
+  if((p.status==='enviada' || p.status==='negociacao') && p.enviada_em) return [p.status==='negociacao' ? 'Enviada (em negociação)' : 'Enviada', p.enviada_em];
+  return null;
+}
+
 
 </script>
 <script>
@@ -392,9 +472,17 @@ function validarProposta(p){
 const CFG = { SUPABASE_URL:'https://yeujqjtjqtegsnzwwazb.supabase.co', SUPABASE_ANON_KEY:'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlldWpxanRqcXRlZ3Nuend3YXpiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1NDE0OTksImV4cCI6MjEwMTExNzQ5OX0.5p1_wJ_aApJpRrN6tFu8qmAytK5FMXWt1soCubpzqao' };
 const SUPABASE_JS = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js';
 
-const APP_VERSION = '1.2.0';
+const APP_VERSION = '1.3.0';
 const PORTAL_URL = 'https://arteconartescontabeis-design.github.io/portal/';
 const CHANGELOG = [
+  { v:'1.3.0', data:'20/09/2026', itens:[
+    'Link para o cliente: abre só a proposta (sem menu, sem login), com botão de PDF e o aceite no fim da página. O link interno, que abre o app inteiro, continua existindo para uso do escritório.',
+    'Assinatura eletrônica pelo próprio link: o cliente informa nome, CPF, e-mail e qualidade, aceita a declaração e assina. Ficam registrados data e hora, IP, navegador, o hash SHA-256 do conteúdo e um código de verificação; o comprovante passa a fazer parte do PDF.',
+    'Proposta assinada vira Aprovada sozinha e fica travada: não pode ser alterada, reaberta nem excluída (só as anotações internas).',
+    'Controle: data e hora de cada etapa (criada, enviada, aprovada, perdida, assinada) gravadas pelo banco, na lista e na tela da proposta, e o momento em que o cliente abriu o link.',
+    'Histórico de alterações: toda mudança de conteúdo registra quem, quando e o que mudou (de quanto para quanto), numa linha do tempo única com os status, os links e a assinatura.',
+    'Gerar o link de um rascunho já marca a proposta como Enviada. Só existe um link ativo por proposta; gerar outro cancela o anterior.'
+  ]},
   { v:'1.2.0', data:'20/09/2026', itens:[
     'Preparação para o Portal Artecon: cada proposta tem endereço próprio (…/propostas/#/proposta/ID), que abre direto no documento depois do login; botão “Copiar link” na tela da proposta.',
     'As telas também ganharam endereço (#/painel, #/propostas, #/clientes…): o botão Voltar do navegador funciona e recarregar a página mantém a tela.',
@@ -491,6 +579,10 @@ const Local = {
   },
   async historico(id){ return this.db.historico.filter(h => h.proposta_id===id).sort((a,b) => a.criado_em < b.criado_em ? -1 : 1); },
   async salvarEscritorio(e){ this.db.tenant.escritorio = e; this.grava(); },
+  async linhaDoTempo(id){ return (await this.historico(id)).map(h => ({ quando:h.criado_em, tipo:h.de ? 'status' : 'criada', quem:h.usuario_email, detalhe:{ de:h.de, para:h.para } })); },
+  async linkAtivo(){ return null; }, async assinatura(){ return null; },
+  async criarLink(){ throw new Error('O link do cliente e a assinatura só funcionam com o app ligado ao banco (modo local é só para teste).'); },
+  async revogarLink(){ return 0; },
   async sair(){}
 };
 
@@ -506,7 +598,8 @@ const Nuvem = {
   async sair(){ await this.sb.auth.signOut({ scope:'local' }); },   // só este navegador: não derruba o robô nem outras máquinas
   erro(e){
     const m = (e && e.message) || String(e);
-    if(/PROP00\d/.test(m)){ const t = m.replace(/^.*PROP00\d:\s*/,''); return new Error(t.charAt(0).toUpperCase() + t.slice(1) + '.'); }
+    if(/Failed to fetch|NetworkError|Load failed/i.test(m)) return new Error('Sem conexão com o banco de dados. Verifique a internet e tente de novo.');
+    if(/PROP0\d\d/.test(m)){ const t = m.replace(/^.*PROP0\d\d:\s*/,''); return new Error(t.charAt(0).toUpperCase() + t.slice(1) + '.'); }
     if(e && e.code==='PGRST116') return new Error('Registro não encontrado ou sem permissão para alterá-lo.');
     if(e && e.code==='23505') return new Error('Já existe cliente ativo com este CNPJ/CPF.');
     if(e && e.code==='42501') return new Error('Sem permissão para esta operação (RLS). Confira se o usuário está vinculado ao escritório.');
@@ -532,6 +625,12 @@ const Nuvem = {
   async inserir(tab, row){ const { data, error } = await this.sb.from(TAB[tab]).insert({ ...row, tenant_id:S.tenant.id }).select().single(); if(error) throw this.erro(error); S[tab].push(data); return data; },
   async alterar(tab, id, patch){ const { data, error } = await this.sb.from(TAB[tab]).update(patch).eq('id', id).select().single(); if(error) throw this.erro(error); const i = S[tab].findIndex(x => x.id===id); if(i>=0) S[tab][i] = data; return data; },
   async historico(id){ const { data, error } = await this.sb.from('prop_historico').select('*').eq('proposta_id', id).order('criado_em'); if(error) throw this.erro(error); return data; },
+  async linhaDoTempo(id){ const { data, error } = await this.sb.rpc('prop_linha_do_tempo', { p_proposta:id }); if(error) throw this.erro(error); return data; },
+  async linkAtivo(id){ const { data, error } = await this.sb.from('prop_links').select('criado_em,expira_em,acessos,primeiro_acesso_em,ultimo_acesso_em,criado_por_email').eq('proposta_id', id).is('revogado_em', null).order('criado_em', { ascending:false }).limit(1); if(error) throw this.erro(error); return data[0] || null; },
+  async assinatura(id){ const { data, error } = await this.sb.from('prop_assinaturas').select('*').eq('proposta_id', id).limit(1); if(error) throw this.erro(error); return data[0] || null; },
+  async recarregar(id){ const { data, error } = await this.sb.from('prop_propostas').select('*').eq('id', id).single(); if(error) throw this.erro(error); const i = S.propostas.findIndex(x => x.id===id); if(i>=0) S.propostas[i] = data; return data; },
+  async criarLink(id){ const { data, error } = await this.sb.rpc('prop_link_criar', { p_proposta:id }); if(error) throw this.erro(error); await this.recarregar(id); return data; },
+  async revogarLink(id){ const { data, error } = await this.sb.rpc('prop_link_revogar', { p_proposta:id }); if(error) throw this.erro(error); return data; },
   async salvarEscritorio(e){ const { data, error } = await this.sb.from('prop_tenants').update({ escritorio:e }).eq('id', S.tenant.id).select(); if(error) throw this.erro(error); if(!data.length) throw new Error('Somente o diretor pode alterar os dados do escritório.'); S.tenant.escritorio = e; }
 };
 const DB = MODO_NUVEM ? Nuvem : Local;
@@ -569,8 +668,8 @@ function rota(){
     if(p){ S.docPrevia = null; S.docId = p.id; ir('documento'); } else { ir('propostas'); toast('Proposta não encontrada ou sem acesso para este usuário.', true); } return; }
   const v = h.replace(/^#\//,''); ir(VIEWS[v] && v!=='form' && v!=='documento' ? v : 'painel');
 }
-window.addEventListener('hashchange', () => { if(S.tenant && S.view!=='form') rota(); else if(S.tenant && S.view==='form' && S._hashInterno!==location.hash){ if(confirm('Sair do formulário? O que não foi salvo será perdido.')) rota(); } });
-function ir(view){ S.view = view; document.querySelectorAll('.menu button').forEach(b => b.classList.toggle('ativo', b.dataset.ir === (view==='form' || view==='documento' ? 'propostas' : view))); VIEWS[view](); window.scrollTo(0,0); const h = hashDe(S.view); if(h && location.hash !== h){ S._hashInterno = h; location.hash = h; } }
+window.addEventListener('hashchange', () => { if(S.modoCliente) return; if(/^#\/c\//.test(location.hash)){ location.reload(); return; } if(S.tenant && S.view!=='form') rota(); else if(S.tenant && S.view==='form' && S._hashInterno!==location.hash){ if(confirm('Sair do formulário? O que não foi salvo será perdido.')) rota(); } });
+function ir(view){ if(view!=='documento') S._linkNovo = null; S.view = view; document.querySelectorAll('.menu button').forEach(b => b.classList.toggle('ativo', b.dataset.ir === (view==='form' || view==='documento' ? 'propostas' : view))); VIEWS[view](); window.scrollTo(0,0); const h = hashDe(S.view); if(h && location.hash !== h){ S._hashInterno = h; location.hash = h; } }
 function topo(titulo, sub, botoes){ return `<div class="topo"><div><h1>${esc(titulo)}</h1><p>${esc(sub)}</p></div><div class="acoes">${botoes || ''}</div></div>`; }
 
 /* ===================== TELAS ===================== */
@@ -657,12 +756,26 @@ const VIEWS = {
 
   documento(){
     const p = S.docPrevia || S.propostas.find(x => x.id===S.docId); if(!p) return ir('propostas');
-    const previa = !!S.docPrevia;
+    const previa = !!S.docPrevia, travada = !!p.assinada_em;
+    const venc = p.validade && p.validade<hojeISO() && (p.status==='enviada'||p.status==='negociacao');
+    const etapas = [['Criada', p.criado_em], ['Enviada', p.enviada_em], ['Aprovada', p.aprovada_em], ['Perdida', p.status==='perdida' ? p.perdida_em : null], ['Assinada pelo cliente', p.assinada_em]].filter(x => x[1]);
     $('conteudo').innerHTML = topo(previa ? 'Prévia do documento' : 'Proposta ' + numeroFmt(p), p.cliente_nome,
-      `<button class="btn" data-act="${previa?'voltarForm':'irPropostas'}">Voltar</button>${previa ? '' : `<button class="btn" data-act="editar" data-id="${p.id}" ${p.status==='aprovada'?'disabled title="Proposta aprovada fica congelada. Volte o status para editar."':''}>Editar</button><button class="btn" data-act="duplicar" data-id="${p.id}">Duplicar</button><button class="btn" data-act="copiarLink">Copiar link</button>`}<button class="btn" data-act="word">Baixar Word</button><button class="btn primario" data-act="imprimir">Imprimir / salvar PDF</button>`) +
-      (previa ? '' : `<div class="painel"><h2>Situação</h2><div class="filtros" style="align-items:center;margin:0 0 12px">${selo(p.status)} <span>Mensal <b>${brl(p.total_mensal)}</b></span> <span>Pontual <b>${brl(p.total_pontual)}</b></span> <span>Validade <b class="${p.validade && p.validade<hojeISO() && (p.status==='enviada'||p.status==='negociacao') ? 'vencida':''}">${p.validade ? dataBR(p.validade) : '—'}</b></span></div><ul class="linha-tempo" id="hist"><li>Carregando histórico…</li></ul>${p.observacoes ? `<p style="margin:12px 0 0"><b>Anotações internas:</b> ${esc(p.observacoes)}</p>` : ''}</div>`) +
+      `<button class="btn" data-act="${previa?'voltarForm':'irPropostas'}">Voltar</button>${previa ? '' : `<button class="btn" data-act="editar" data-id="${p.id}" ${travada ? 'disabled title="Proposta assinada pelo cliente não pode ser alterada."' : p.status==='aprovada'?'disabled title="Proposta aprovada fica congelada. Volte o status para editar."':''}>Editar</button><button class="btn" data-act="duplicar" data-id="${p.id}">Duplicar</button>`}<button class="btn" data-act="word">Baixar Word</button><button class="btn primario" data-act="imprimir">Imprimir / salvar PDF</button>`) +
+      (previa ? '' : `<div class="painel"><h2>Controle</h2>
+        <div class="filtros" style="align-items:center;margin:0 0 10px">${selo(p.status)}${travada ? ' <span class="selo aprovada">Assinada pelo cliente</span>' : ''} <span>Mensal <b>${brl(p.total_mensal)}</b></span> <span>Pontual <b>${brl(p.total_pontual)}</b></span> <span>Validade <b class="${venc ? 'vencida':''}">${p.validade ? dataBR(p.validade) : '—'}</b></span></div>
+        <div class="etapas">${etapas.map(x => `<div><span>${esc(x[0])}</span><b>${esc(dataHora(x[1]))}</b></div>`).join('')}</div>
+        ${p.observacoes ? `<p style="margin:12px 0 0"><b>Anotações internas:</b> ${esc(p.observacoes)}</p>` : ''}</div>
+      <div class="painel"><h2>Link para o cliente</h2><div id="linkCliente">Carregando…</div></div>
+      <div class="painel"><h2>Histórico</h2><ul class="linha-tempo" id="hist"><li>Carregando…</li></ul></div>`) +
       `<div class="doc-area" id="docArea">${docHTML(p)}</div>`;
-    if(!previa) tenta(async () => { const h = await DB.historico(p.id); $('hist').innerHTML = h.map(x => `<li><b>${esc(STATUS[x.para]||x.para)}</b>${x.de ? ' (antes: ' + esc(STATUS[x.de]||x.de) + ')' : ' — proposta criada'} · ${new Date(x.criado_em).toLocaleString('pt-BR')} · ${esc(x.usuario_email||'')}</li>`).join('') || '<li>Sem histórico.</li>'; });
+    if(!previa) tenta(async () => {
+      const [lt, link, ass] = await Promise.all([DB.linhaDoTempo(p.id), DB.linkAtivo(p.id), DB.assinatura(p.id)]);
+      if(S.view!=='documento' || S.docId!==p.id) return;
+      S.assinaturaDoc = ass;
+      $('hist').innerHTML = lt.map(linhaTempoHTML).join('') || '<li>Sem registros.</li>';
+      desenhaLinkCliente(p, link, ass, S._linkNovo && S._linkNovo.id===p.id ? S._linkNovo.r : undefined);
+      if(ass) $('docArea').innerHTML = docHTML(p, ass);
+    });
   },
 
   escritorio(){
@@ -683,16 +796,48 @@ const VIEWS = {
   }
 };
 
+/* ----- controle, histórico e link do cliente ----- */
+function linhaTempoHTML(x){
+  const d = x.detalhe || {}, quem = x.quem ? ' · ' + esc(x.quem) : '';
+  let t = '', extra = '';
+  if(x.tipo==='criada') t = 'Proposta criada';
+  else if(x.tipo==='status') t = `Status: ${esc(STATUS[d.de]||d.de)} → <b>${esc(STATUS[d.para]||d.para)}</b>`;
+  else if(x.tipo==='alteracao'){ const l = descreveAlteracao(d); t = 'Conteúdo alterado'; extra = `<ul class="dif">${l.map(i => `<li>${esc(i)}</li>`).join('')}</ul>`; }
+  else if(x.tipo==='link_gerado') t = `Link do cliente gerado (vale até ${esc(dataHora(d.expira_em))})`;
+  else if(x.tipo==='link_cancelado') t = 'Link do cliente cancelado';
+  else if(x.tipo==='cliente_abriu') t = `Cliente abriu a proposta pela primeira vez${d.acessos>1 ? ` (${d.acessos} acessos; último em ${esc(dataHora(d.ultimo_acesso_em))})` : ''}`;
+  else if(x.tipo==='assinada') t = `<b>Assinada eletronicamente</b> — código ${esc(d.codigo)}${d.ip ? ', IP ' + esc(d.ip) : ''}`;
+  else t = esc(x.tipo);
+  return `<li class="lt-${esc(x.tipo)}"><span class="lt-quando">${esc(dataHora(x.quando))}</span> ${t}<small>${quem}</small>${extra}</li>`;
+}
+function urlCliente(token){ return location.href.split('#')[0] + '#/c/' + token; }
+function desenhaLinkCliente(p, link, ass, novo){
+  const el = $('linkCliente'); if(!el) return;
+  if(!MODO_NUVEM){ el.innerHTML = '<p class="dica">Disponível com o app ligado ao banco. No modo local não há link nem assinatura.</p>'; return; }
+  if(ass){ el.innerHTML = `<p style="margin:0"><b>${esc(ass.nome)}</b>${ass.cargo ? ' (' + esc(ass.cargo) + ')' : ''} assinou em <b>${esc(dataHora(ass.assinado_em))}</b>. Código de verificação <b>${esc(ass.codigo)}</b>. O comprovante está na última página do documento abaixo e sai no PDF.</p>`; return; }
+  if(p.status==='aprovada' || p.status==='perdida'){ el.innerHTML = '<p class="dica" style="margin:0">Proposta aprovada ou perdida não recebe link. Volte o status para Enviada ou Em negociação se precisar do aceite do cliente.</p>'; return; }
+  let h = '';
+  if(novo){ const url = urlCliente(novo.token), msg = `Olá! Segue a Proposta de Honorários nº ${numeroFmt(p)} da ${S.tenant.nome} para leitura e aceite eletrônico: ${url}`;
+    h += `<div class="linkbox"><label for="urlCli" class="rotulo">Endereço para enviar ao cliente — copie agora: por segurança ele não fica guardado e não aparece de novo</label>
+      <div class="filtros" style="margin:6px 0 0"><input type="text" id="urlCli" readonly value="${esc(url)}"><button class="btn primario" data-act="copiarUrlCli">Copiar</button>
+      <a class="btn" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(msg)}">WhatsApp</a>
+      <a class="btn" href="mailto:?subject=${encodeURIComponent('Proposta de Honorários nº ' + numeroFmt(p))}&body=${encodeURIComponent(msg)}">E-mail</a></div></div>`; }
+  if(link) h += `<p style="margin:${novo?'12px':'0'} 0 10px">Link ativo gerado em ${esc(dataHora(link.criado_em))} por ${esc(link.criado_por_email||'—')}, vale até ${esc(dataHora(link.expira_em))}. ${link.primeiro_acesso_em ? `O cliente abriu <b>${link.acessos}</b> vez${link.acessos>1?'es':''}; a primeira em ${esc(dataHora(link.primeiro_acesso_em))} e a última em ${esc(dataHora(link.ultimo_acesso_em))}.` : '<b>O cliente ainda não abriu.</b>'}</p>`;
+  else if(!novo) h += `<p style="margin:0 0 10px">O cliente recebe um endereço que abre <b>só esta proposta</b> — sem menu e sem login — e pode assinar ali mesmo.${p.status==='rascunho' ? ' Ao gerar o link, a proposta passa para <b>Enviada</b>.' : ''}</p>`;
+  h += `<div class="filtros" style="margin:0"><button class="btn ${link||novo ? '' : 'primario'}" data-act="gerarLink">${link||novo ? 'Gerar novo link (cancela o anterior)' : 'Gerar link para o cliente'}</button>${link||novo ? '<button class="btn" data-act="cancelarLink">Cancelar link</button>' : ''}<button class="btn" data-act="copiarLink" title="Abre o app inteiro e pede login: só para quem é do escritório">Copiar link interno</button></div>`;
+  el.innerHTML = h;
+}
+
 /* ----- lista de propostas ----- */
 function tabelaPropostas(arr, compacta){
   if(!arr.length) return `<div class="vazio">${S.propostas.length ? 'Nenhuma proposta encontrada com este filtro.' : 'Nenhuma proposta ainda. Crie a primeira em “Nova proposta”.'}</div>`;
   const hoje = hojeISO();
-  return `<div class="rolagem"><table class="lista"><thead><tr><th>Nº</th><th>Cliente</th><th class="num">Mensal</th><th class="num">Pontual</th><th>Status</th>${compacta ? '' : '<th>Data</th><th>Validade</th>'}<th></th></tr></thead><tbody>${arr.map(p => {
+  return `<div class="rolagem"><table class="lista"><thead><tr><th>Nº</th><th>Cliente</th><th class="num">Mensal</th><th class="num">Pontual</th><th>Status</th>${compacta ? '' : '<th>Controle</th><th>Validade</th>'}<th></th></tr></thead><tbody>${arr.map(p => {
     const venc = p.validade && p.validade < hoje && (p.status==='enviada' || p.status==='negociacao');
     return `<tr><td>${esc(numeroFmt(p))}</td><td><b>${esc(p.cliente_nome)}</b><br><small>${esc(p.contato || 'sem contato')}</small></td><td class="num">${+p.total_mensal ? brl(p.total_mensal) : '—'}</td><td class="num">${+p.total_pontual ? brl(p.total_pontual) : '—'}</td>
-    <td>${compacta ? selo(p.status) : `<select data-status="${p.id}" aria-label="Status da proposta ${esc(numeroFmt(p))}">${STATUS_ORDEM.map(s => `<option value="${s}" ${p.status===s?'selected':''}>${esc(STATUS[s])}</option>`).join('')}</select>`}</td>
-    ${compacta ? '' : `<td>${dataBR(p.data_proposta)}</td><td class="${venc?'vencida':''}">${p.validade ? dataBR(p.validade) + (venc ? ' (vencida)' : '') : '—'}</td>`}
-    <td class="acoes-linha"><button class="btn mini" data-act="doc" data-id="${p.id}">Documento</button>${compacta ? '' : ` <button class="btn mini" data-act="editar" data-id="${p.id}" ${p.status==='aprovada'?'disabled title="Proposta aprovada fica congelada. Volte o status para editar."':''}>Editar</button> <button class="btn mini" data-act="duplicar" data-id="${p.id}">Duplicar</button> <button class="btn mini" data-act="excluirProposta" data-id="${p.id}">Excluir</button>`}</td></tr>`; }).join('')}</tbody></table></div>`;
+    <td>${compacta ? selo(p.status) : `<select data-status="${p.id}" ${p.assinada_em ? 'disabled title="Assinada pelo cliente"' : ''} aria-label="Status da proposta ${esc(numeroFmt(p))}">${STATUS_ORDEM.map(s => `<option value="${s}" ${p.status===s?'selected':''}>${esc(STATUS[s])}</option>`).join('')}</select>`}</td>
+    ${compacta ? '' : `<td><small>Criada ${esc(dataHora(p.criado_em) || dataBR(p.data_proposta))}</small>${etapaAtual(p) ? '<br>' + esc(etapaAtual(p)[0]) + ' ' + esc(dataHora(etapaAtual(p)[1])) : ''}</td><td class="${venc?'vencida':''}">${p.validade ? dataBR(p.validade) + (venc ? ' (vencida)' : '') : '—'}</td>`}
+    <td class="acoes-linha"><button class="btn mini" data-act="doc" data-id="${p.id}">Documento</button>${compacta ? '' : ` <button class="btn mini" data-act="editar" data-id="${p.id}" ${p.assinada_em || p.status==='aprovada'?'disabled title="Proposta aprovada ou assinada fica congelada."':''}>Editar</button> <button class="btn mini" data-act="duplicar" data-id="${p.id}">Duplicar</button> <button class="btn mini" data-act="excluirProposta" data-id="${p.id}" ${p.assinada_em ? 'disabled title="Proposta assinada pelo cliente não pode ser excluída."' : ''}>Excluir</button>`}</td></tr>`; }).join('')}</tbody></table></div>`;
 }
 function listarPropostas(){
   const q = S.busca.trim().toLowerCase(), qd = soDoc(q);
@@ -782,7 +927,7 @@ async function salvarProposta(){
 }
 
 /* ----- documento ----- */
-function docHTML(p){
+function docHTML(p, ass){
   const e = esc_(), secoes = clausulas(p, e), c = p.condicoes || {};
   const dirigido = [p.tratamento, p.contato].filter(Boolean).join(' ');
   const assunto = String(p.assunto||'').trim();
@@ -809,7 +954,18 @@ function docHTML(p){
     <p>Atenciosamente,</p>
     <div class="assinatura">_____________________________<br>${esc(e.responsavel)}<br>${esc(e.registro)}</div>
     ${c.aceite ? `<div class="aceite"><b>TERMO DE ACEITE</b><p style="margin:3mm 0 0">Declaro que li e estou de acordo com as condições desta proposta${p.numero ? ' nº ' + esc(numeroFmt(p)) : ''}, autorizando a elaboração do contrato de prestação de serviços contábeis.</p><div class="linhas"><div>${esc(p.cliente_nome)}${p.cliente_documento ? '<br>' + esc(docFmt(p.cliente_documento)) : ''}</div><div>Local e data</div></div></div>` : ''}
+    ${ass ? comprovanteHTML(p, ass) : ''}
   </div></td></tr></tbody></table></div>`;
+}
+function comprovanteHTML(p, a){
+  const cpf = /^\d{11}$/.test(a.cpf || '') ? docFmt(a.cpf) : a.cpf, L = (r, v) => v ? `<tr><th>${r}</th><td>${v}</td></tr>` : '';
+  return `<div class="comprovante"><h3 style="margin-top:0">COMPROVANTE DE ASSINATURA ELETRÔNICA</h3><table>
+    ${L('Documento', 'Proposta de Honorários nº ' + esc(numeroFmt(p)) + ' — ' + esc(p.cliente_nome))}
+    ${L('Signatário', esc(a.nome))}${L('CPF', esc(cpf))}${L('E-mail', esc(a.email))}${L('Qualidade', esc(a.cargo || ''))}
+    ${L('Data e hora', esc(dataHora(a.assinado_em)) + ' (horário de Brasília)')}${L('Endereço IP', esc(a.ip || ''))}${L('Navegador', esc(a.user_agent || ''))}
+    ${L('Código de verificação', '<b>' + esc(a.codigo) + '</b>')}${L('Hash SHA-256 do conteúdo', '<span class="hash">' + esc(a.hash_documento) + '</span>')}</table>
+    <p><b>Declaração aceita pelo signatário:</b> ${esc(a.declaracao)}</p>
+    <p style="font-size:9pt">O hash acima identifica exatamente o conteúdo aceito (cliente, serviços, valores, condições e validade); qualquer alteração produziria outro hash. Registro feito pelo sistema de propostas da ${esc(S.tenant ? S.tenant.nome : '')}.</p></div>`;
 }
 function baixar(nome, conteudo, tipo){ const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([conteudo], { type:tipo })); a.download = nome; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); }
 function nomeArquivo(p){ return 'Proposta_' + (p.numero ? numeroFmt(p).replace('/','-') + '_' : '') + p.cliente_nome.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^A-Za-z0-9]+/g,'_').slice(0,50); }
@@ -865,8 +1021,15 @@ const ACOES = {
   previa(){ const F = leF(); const er = validarProposta(F); if(er.length){ toast(er[0], true); return; } S.docPrevia = JSON.parse(JSON.stringify(F)); ir('documento'); },
   voltarForm(){ S.docPrevia = null; ir('form'); },
   imprimir(){ window.print(); },
+  async gerarLink(){ const p = S.propostas.find(x => x.id===S.docId); if(!p) return; const era = p.status;
+    const tinha = !!document.querySelector('[data-act="cancelarLink"]');
+    if(tinha && !confirm('Gerar um link novo cancela o anterior: o endereço que o cliente já recebeu deixa de funcionar. Continuar?')) return;
+    await tenta(async () => { const r = await DB.criarLink(p.id); S._linkNovo = { id:p.id, r }; VIEWS.documento(); toast(era==='rascunho' ? 'Link gerado. A proposta passou para Enviada.' : 'Link gerado.'); }); },
+  async cancelarLink(){ if(!confirm('Cancelar o link? O endereço que o cliente recebeu deixa de funcionar.')) return;
+    await tenta(async () => { await DB.revogarLink(S.docId); S._linkNovo = null; toast('Link cancelado.'); VIEWS.documento(); }); },
+  async copiarUrlCli(){ const i = $('urlCli'); try{ await navigator.clipboard.writeText(i.value); toast('Endereço copiado. Envie ao cliente.'); }catch(e){ i.select(); document.execCommand('copy'); toast('Endereço copiado.'); } },
   async copiarLink(){ const url = location.href.split('#')[0] + '#/proposta/' + S.docId; try{ await navigator.clipboard.writeText(url); toast('Link da proposta copiado.'); }catch(e){ prompt('Copie o link da proposta:', url); } },
-  word(){ const p = S.docPrevia || S.propostas.find(x => x.id===S.docId); baixar(nomeArquivo(p) + '.doc', '\ufeff' + wordHTML(p), 'application/msword'); },
+  word(){ const p = S.docPrevia || S.propostas.find(x => x.id===S.docId) || S.docCliente; baixar(nomeArquivo(p) + '.doc', '\ufeff' + wordHTML(p), 'application/msword'); },
   salvarProposta(){ salvarProposta(); },
   addItem(){ S.F.itens.push({ nome:'', descricao:'', tipo:S.F.modelo==='pontual' ? 'pontual' : 'mensal', valor:0, qtd:0 }); desenhaItens(); desenhaCondicoes(); },
   delItem(el){ S.F.itens.splice(+el.dataset.i, 1); desenhaItens(); desenhaCondicoes(); },
@@ -929,6 +1092,57 @@ document.addEventListener('change', async ev => {
   if(el.dataset.f==='cliente_documento'){ el.value = docFmt(el.value); if(!docValido(el.value)) toast('CNPJ/CPF inválido. Confira os dígitos.', true); }
 });
 
+/* ===================== PÁGINA DO CLIENTE (só a proposta, sem login) ===================== */
+const Cliente = { sb:null, token:null, dados:null,
+  async boot(token){ this.token = token;
+    await new Promise((ok, erro) => { const s = document.createElement('script'); s.src = SUPABASE_JS; s.onload = ok; s.onerror = () => erro(new Error('Não foi possível carregar a página. Verifique a internet e tente de novo.')); document.head.appendChild(s); });
+    // sessão própria e vazia: mesmo que o navegador tenha alguém do escritório logado, aqui tudo roda como visitante
+    this.sb = window.supabase.createClient(CFG.SUPABASE_URL, CFG.SUPABASE_ANON_KEY, { auth:{ persistSession:false, autoRefreshToken:false, detectSessionInUrl:false, storageKey:'prop-cliente' } }); },
+  async ver(){ const { data, error } = await this.sb.rpc('prop_publico_ver', { p_token:this.token }); if(error) throw new Error('Não foi possível abrir a proposta agora. Tente de novo em instantes.'); this.dados = data; return data; },
+  async assinar(f){ const { data, error } = await this.sb.rpc('prop_publico_assinar', { p_token:this.token, p_nome:f.nome, p_cpf:f.cpf, p_email:f.email, p_cargo:f.cargo, p_hash:this.dados.hash, p_user_agent:navigator.userAgent }); if(error) throw new Error('Não foi possível registrar a assinatura agora. Tente de novo em instantes.'); return data; }
+};
+function telaClienteErro(msg){ $('raiz').innerHTML = `<div class="login"><div class="cx"><img src="${LOGO}" alt="Artecon artes contábeis"><div class="erros" role="alert">${esc(msg)}</div></div></div>`; }
+async function telaCliente(){
+  const r = await Cliente.ver(); if(!r.ok){ telaClienteErro(r.mensagem || 'Link inválido.'); return; }
+  const p = r.proposta, a = r.assinatura; S.tenant = { nome:r.escritorio.nome, escritorio:{ ...ESCRITORIO_PADRAO, ...r.escritorio } }; S.docCliente = p;
+  document.title = 'Proposta ' + numeroFmt(p) + ' | ' + r.escritorio.nome;
+  let aceite;
+  if(a) aceite = `<h2>Proposta assinada</h2><p><b>${esc(a.nome)}</b> assinou em <b>${esc(dataHora(a.assinado_em))}</b>. Código de verificação <b>${esc(a.codigo)}</b>.</p><p>O comprovante está na última página do documento acima. Use “Salvar em PDF” para guardar a sua via.</p>`;
+  else if(!r.pode_assinar) aceite = `<h2>Aceite indisponível</h2><p>${r.motivo==='vencida' ? 'A validade desta proposta terminou em ' + esc(dataBR(p.validade)) + '. Peça a atualização ao escritório.' : 'Esta proposta não está aberta para aceite no momento. Fale com o escritório.'}</p>`;
+  else aceite = `<h2>Aceite eletrônico</h2><p>Leia a proposta acima. Para aceitar, identifique-se e assine. Quem assina precisa ter poderes para representar <b>${esc(p.cliente_nome)}</b>.</p>
+    <div id="cliErros"></div>
+    <div class="grade">
+      <div class="campo"><label for="a_nome">Nome completo *</label><input type="text" id="a_nome" autocomplete="name"></div>
+      <div class="campo c1"><label for="a_cpf">CPF *</label><input type="text" id="a_cpf" inputmode="numeric" placeholder="000.000.000-00"></div>
+      <div class="campo c1"><label for="a_cargo">Qualidade</label><input type="text" id="a_cargo" placeholder="Sócio administrador, procurador…"></div>
+      <div class="campo c4"><label for="a_email">E-mail *</label><input type="email" id="a_email" autocomplete="email"></div>
+    </div>
+    <label class="marcar" style="margin-top:12px"><input type="checkbox" id="a_ok"> <span>Declaro que li e aceito integralmente os termos da Proposta de Honorários nº ${esc(numeroFmt(p))}, que tenho poderes para representar ${esc(p.cliente_nome)} neste ato e que reconheço esta assinatura eletrônica como válida e eficaz, nos termos do art. 10, § 2º, da Medida Provisória nº 2.200-2/2001. Estou ciente de que meu nome, CPF, e-mail, endereço IP, data e hora ficam registrados como evidência deste aceite.</span></label>
+    <div class="barra-salvar" style="margin-top:14px"><button class="btn primario" id="a_assinar">Assinar e aprovar a proposta</button></div>`;
+  $('raiz').innerHTML = `<div class="cliente">
+    <header class="cli-topo nao-imprime"><img src="${LOGO}" alt="${esc(r.escritorio.nome)}"><div class="cli-id"><b>Proposta nº ${esc(numeroFmt(p))}</b><span>${esc(p.cliente_nome)}</span></div>
+      <div class="acoes"><button class="btn" data-act="imprimir">Salvar em PDF / imprimir</button>${!a && r.pode_assinar ? '<a class="btn primario" href="#aceite" id="irAceite">Ir para o aceite</a>' : ''}</div></header>
+    <div class="doc-area" id="docArea">${docHTML(p, a)}</div>
+    <section class="cli-aceite nao-imprime" id="aceite">${aceite}</section></div>`;
+  const ir_ = $('irAceite'); if(ir_) ir_.onclick = ev => { ev.preventDefault(); $('aceite').scrollIntoView({ behavior:'smooth' }); $('a_nome').focus({ preventScroll:true }); };
+  const cpfEl = $('a_cpf'); if(cpfEl) cpfEl.onchange = () => { cpfEl.value = docFmt(cpfEl.value); };
+  const b = $('a_assinar'); if(b) b.onclick = async () => {
+    const f = { nome:$('a_nome').value.trim().replace(/\s+/g,' '), cpf:soDoc($('a_cpf').value), email:$('a_email').value.trim(), cargo:$('a_cargo').value.trim() }, er = [];
+    if(f.nome.length < 5 || !f.nome.includes(' ')) er.push('Informe o nome completo.');
+    if(f.cpf.length !== 11 || !cpfValido(f.cpf)) er.push('CPF inválido. Confira os dígitos.');
+    if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(f.email)) er.push('Informe um e-mail válido.');
+    if(!$('a_ok').checked) er.push('Marque a declaração para assinar.');
+    const mostra = l => { $('cliErros').innerHTML = l.length ? `<div class="erros" role="alert"><ul style="margin:0;padding-left:18px">${l.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>` : ''; };
+    mostra(er); if(er.length) return;
+    b.disabled = true; b.textContent = 'Registrando a assinatura…';
+    try{ const x = await Cliente.assinar(f);
+      if(x.ok){ await telaCliente(); toast('Assinatura registrada. Obrigado!'); $('aceite').scrollIntoView(); return; }
+      mostra([x.mensagem || 'Não foi possível assinar.']); if(x.erro==='alterada'){ b.textContent = 'Recarregar a proposta'; b.disabled = false; b.onclick = () => telaCliente(); return; }
+    }catch(e){ mostra([e.message]); }
+    b.disabled = false; b.textContent = 'Assinar e aprovar a proposta';
+  };
+}
+
 /* ===================== INÍCIO ===================== */
 function telaLogin(msg){
   $('raiz').innerHTML = `<div class="login"><div class="cx"><img src="${LOGO}" alt="Artecon artes contábeis"><div class="campo"><label for="l_email">E-mail</label><input type="email" id="l_email" autocomplete="username"></div><div class="campo"><label for="l_senha">Senha</label><input type="password" id="l_senha" autocomplete="current-password"></div>${msg ? `<div class="erros" role="alert">${esc(msg)}</div>` : ''}<button class="btn primario" style="width:100%" id="l_entrar">Entrar</button><p style="text-align:center;color:var(--suave);font-size:12px;margin:14px 0 0">Propostas de honorários · v${APP_VERSION}</p></div></div>`;
@@ -940,6 +1154,11 @@ async function abrir(){
   moldura(); rota();
 }
 (async () => {
+  const mc = location.hash.match(/^#\/c\/([0-9a-f]{64})$/i);
+  if(mc || /^#\/c\//.test(location.hash)){ S.modoCliente = true;
+    try{ if(!mc) return telaClienteErro('Link incompleto. Copie o endereço inteiro que o escritório enviou.'); if(!MODO_NUVEM) return telaClienteErro('Este endereço só funciona na versão publicada do aplicativo.');
+      await Cliente.boot(mc[1].toLowerCase()); await telaCliente(); }catch(e){ console.error(e); telaClienteErro(e.message || String(e)); }
+    return; }
   if(CFG_INCOMPLETA){ $('raiz').innerHTML = `<div class="login"><div class="cx"><div class="erros" role="alert"><b>Configuração incompleta.</b><br>No <code>const CFG</code> falta ${CFG.SUPABASE_URL ? 'a chave (SUPABASE_ANON_KEY)' : 'o endereço do projeto (SUPABASE_URL)'}. Preencha os dois campos e publique de novo.</div></div></div>`; return; }
   try{ const r = await DB.boot(); if(r==='login') telaLogin(); else await abrir(); }
   catch(e){ console.error(e); $('raiz').innerHTML = `<div class="login"><div class="cx"><div class="erros" role="alert"><b>O app não abriu.</b><br>${esc(e.message || e)}</div></div></div>`; }
