@@ -98,7 +98,7 @@ textarea{resize:vertical}
 .item.cab{background:#f5f9fa;font-size:12px;color:var(--suave);padding:7px 10px}
 .item .subtotal{text-align:right;padding-top:9px;font-variant-numeric:tabular-nums}
 .item .x{border:0;background:none;cursor:pointer;font-size:20px;line-height:1;color:var(--vermelho);padding:6px}
-.parcela{display:grid;grid-template-columns:140px 1fr 34px;gap:8px;margin-bottom:6px}
+.parcela{display:grid;grid-template-columns:130px 160px 1fr 34px;gap:8px;margin-bottom:6px}
 .totais{display:flex;justify-content:flex-end;gap:34px;padding:14px 10px;font-size:15px}
 .totais b{font:700 20px var(--titulo);color:var(--vermelho);margin-left:8px}
 .erros{border-left:4px solid var(--vermelho);background:#fdf1f1;padding:12px 16px;margin-bottom:16px}
@@ -203,6 +203,7 @@ table.miolo td{padding:0}
   .linha-tempo .lt-quando{display:block}.linha-tempo .dif{margin-left:0}
   .grade{grid-template-columns:1fr 1fr}.campo,.campo.c1{grid-column:span 2}
   .item{grid-template-columns:1fr 1fr}.item.cab{display:none}
+  .parcela{grid-template-columns:1fr 1fr 34px}.parcela input[data-k=descricao]{grid-column:1/-1;grid-row:2}
 }
 @page{size:A4;margin:0}
 @media print{
@@ -372,12 +373,11 @@ function clausulas(p, esc_){
   if(p.modelo==='recorrente'){
     if(fixo>0) v.push({ texto:`O valor dos honorários para ${p.assunto || 'a prestação dos serviços'} é de ${money(fixo)} mensais, referente aos serviços descritos no item 1.1.` });
     porFunc.forEach(i => v.push({ texto:`A soma dos produtos e serviços do item ${i.nome} é variável em função do número de funcionários no mês, multiplicado pelo valor unitário de ${money(i.valor)} mensais.` + (c.prolabore_sem_custo!==false ? ' Para a emissão de pró-labore não há custo adicional.' : '') + ((parseInt(i.qtd)||0)>0 ? ` Considerando o quadro atual de ${parseInt(i.qtd)} funcionário${parseInt(i.qtd)>1?'s':''}, o valor estimado é de ${money(r2(i.valor*parseInt(i.qtd)))} mensais.` : '') }));
-    if(t.pontual>0) v.push({ texto:`Os serviços pontuais descritos no item 1.1 totalizam ${money(t.pontual)}` + (c.parcelas && c.parcelas.length ? ', a serem pagos da seguinte forma:' : ', a serem pagos na aceitação da proposta.'), alineas: parcelasTxt(c.parcelas, money) });
+    if(t.pontual>0) v.push(pagamentoPontualTxt(c, true, money(t.pontual), money));
     if(c.adicional_anual) v.push({ texto:'A cada mês de novembro será cobrado um adicional anual correspondente ao valor de uma parcela mensal, para atendimento ao acréscimo de serviços e encargos próprios do período final do exercício, tais como elaboração das demonstrações contábeis anuais, elaboração e remessa das informações ao fisco federal, estadual e municipal, quando for o caso, informes de rendimento anual, SPED Contábil e SPED ECF, folha de pagamento do 13º salário e demais informativos. O valor deste adicional poderá ser parcelado em 12 (doze) vezes.' });
   } else {
     v.push({ texto:`O valor dos honorários para os trabalhos previstos no item 1.1 é de ${money(t.pontual)}.` });
-    if(c.parcelas && c.parcelas.length) v.push({ texto:'O valor previsto no item 2.1 será pago da seguinte forma:', alineas: parcelasTxt(c.parcelas, money) });
-    else v.push({ texto:'O pagamento será efetuado na aceitação da proposta, mediante apresentação de nota fiscal e boleto bancário correspondente.' });
+    v.push(pagamentoPontualTxt(c, false, '', money));
     if(parseInt(c.prazo_dias)>0) v.push({ texto:`O prazo para execução dos trabalhos é de ${parseInt(c.prazo_dias)} (${inteiroExtenso(parseInt(c.prazo_dias))}) dias, ${c.prazo_marco || 'contados da assinatura do contrato'}.` });
     if(t.mensal>0) v.push({ texto:`Os serviços de natureza mensal descritos no item 1.1 somam ${money(t.mensal)} mensais.` });
   }
@@ -401,8 +401,19 @@ function clausulas(p, esc_){
   secoes.forEach((s,i) => { s.n = i+1; s.clausulas.forEach((k,j) => k.n = `${i+1}.${j+1}.`); });
   return secoes;
 }
+/* como o valor pontual é pago. Propostas antigas (sem a chave) mantêm exatamente o texto que tinham. */
+const FORMAS_PGTO = { boleto_mensal:'Junto com o boleto mensal', data:'Em data de vencimento', parcelas:'Parcelado', aceitacao:'Na aceitação da proposta' };
+function formaPagamento(c){ c = c || {}; return FORMAS_PGTO[c.pagamento_pontual] ? c.pagamento_pontual : ((c.parcelas||[]).length ? 'parcelas' : 'aceitacao'); }
 function parcelasTxt(parcelas, money){
-  return (parcelas||[]).filter(x => (+x.valor||0)>0).map((x,i) => `${String.fromCharCode(97+i)}) ${money(x.valor)}, ${x.descricao || 'conforme combinado'}`);
+  return (parcelas||[]).filter(x => (+x.valor||0)>0).map((x,i) => { const d = String(x.descricao||'').trim();
+    return `${String.fromCharCode(97+i)}) ${money(x.valor)}, ${x.data ? 'com vencimento em ' + dataBR(x.data) + (d ? ', ' + d : '') : (d || 'conforme combinado')}`; });
+}
+function pagamentoPontualTxt(c, recorrente, valorTxt, money){
+  const f = formaPagamento(c), ini = recorrente ? `Os serviços pontuais descritos no item 1.1 totalizam ${valorTxt}, a serem ` : 'O valor previsto no item 2.1 será ';
+  if(f==='boleto_mensal') return { texto: ini + (recorrente ? 'cobrados' : 'cobrado') + ' juntamente com o boleto dos honorários mensais' + (c.vencimento_pontual ? ', com vencimento em ' + dataBR(c.vencimento_pontual) : '') + '.' };
+  if(f==='data') return { texto: ini + (recorrente ? 'pagos' : 'pago') + ' até ' + (c.vencimento_pontual ? dataBR(c.vencimento_pontual) : '—') + ', mediante apresentação de nota fiscal e boleto bancário correspondente.' };
+  if(f==='parcelas') return { texto: ini + (recorrente ? 'pagos' : 'pago') + ' da seguinte forma:', alineas: parcelasTxt(c.parcelas, money) };
+  return recorrente ? { texto: ini + 'pagos na aceitação da proposta.' } : { texto:'O pagamento será efetuado na aceitação da proposta, mediante apresentação de nota fiscal e boleto bancário correspondente.' };
 }
 function somaParcelas(parcelas){ return r2((parcelas||[]).reduce((a,x)=>a+(+x.valor||0),0)); }
 
@@ -417,8 +428,10 @@ function validarProposta(p){
   const t = totais(it);
   if(it.length && t.mensal + t.pontual + it.filter(i=>i.tipo==='por_funcionario').reduce((a,i)=>a+(+i.valor||0),0) <= 0) er.push('A proposta está com valor zero.');
   if(p.modelo==='pontual' && t.pontual<=0 && it.length) er.push('Proposta pontual precisa de pelo menos um serviço do tipo Pontual com valor.');
-  const par = (p.condicoes||{}).parcelas||[];
-  if(par.length && t.pontual>0 && Math.abs(somaParcelas(par) - t.pontual) > 0.009) er.push(`As parcelas somam ${brl(somaParcelas(par))}, mas o total pontual é ${brl(t.pontual)}.`);
+  const par = (p.condicoes||{}).parcelas||[], forma = formaPagamento(p.condicoes);
+  if(t.pontual>0 && forma==='data' && !(p.condicoes||{}).vencimento_pontual) er.push('Informe a data de vencimento do valor pontual.');
+  if(t.pontual>0 && forma==='parcelas' && !par.length) er.push('Forma de pagamento “Parcelado”: inclua as parcelas.');
+  if(forma==='parcelas' && par.length && t.pontual>0 && Math.abs(somaParcelas(par) - t.pontual) > 0.009) er.push(`As parcelas somam ${brl(somaParcelas(par))}, mas o total pontual é ${brl(t.pontual)}.`);
   if(p.validade && p.data_proposta && p.validade < p.data_proposta) er.push('A validade está anterior à data da proposta.');
   return er;
 }
@@ -431,7 +444,7 @@ function dataHora(iso){
   return `${f.day}/${f.month}/${f.year} às ${f.hour}:${f.minute}`;
 }
 const ROTULO_CAMPO = { cliente_nome:'Cliente', cliente_documento:'CNPJ/CPF', contato:'Responsável', tratamento:'Tratamento', modelo:'Modelo', assunto:'Assunto', abertura:'Parágrafo de abertura', itens:'Serviços', condicoes:'Condições', total_mensal:'Total mensal', total_pontual:'Total pontual', validade:'Validade', observacoes:'Anotações internas', excluido_em:'Exclusão' };
-const ROTULO_COND = { dia_vencimento:'Dia de vencimento', indice:'Índice de reajuste', adicional_anual:'Adicional anual', revisao_bimestral:'Revisão bimestral', taxas_abertura:'Cláusula das taxas de abertura', prolabore_sem_custo:'Pró-labore sem custo', parcelas:'Parcelas', prazo_dias:'Prazo de execução (dias)', prazo_marco:'Contagem do prazo', adicionais:'Cláusulas adicionais', aceite:'Termo de aceite' };
+const ROTULO_COND = { dia_vencimento:'Dia de vencimento', indice:'Índice de reajuste', adicional_anual:'Adicional anual', revisao_bimestral:'Revisão bimestral', taxas_abertura:'Cláusula das taxas de abertura', prolabore_sem_custo:'Pró-labore sem custo', parcelas:'Parcelas', pagamento_pontual:'Forma de pagamento do valor pontual', vencimento_pontual:'Vencimento do valor pontual', prazo_dias:'Prazo de execução (dias)', prazo_marco:'Contagem do prazo', adicionais:'Cláusulas adicionais', aceite:'Termo de aceite' };
 function _curto(v){ const t = String(v ?? '').replace(/\s+/g,' ').trim(); return t ? (t.length>70 ? '“' + t.slice(0,70) + '…”' : '“' + t + '”') : '(vazio)'; }
 function _simNao(v){ return v===true ? 'sim' : v===false ? 'não' : (v===null || v===undefined || v==='' ? '(vazio)' : String(v)); }
 function _itemTxt(i){ return `“${i.nome}” ${brl(i.valor)}${i.tipo==='por_funcionario' ? ' por funcionário' + ((parseInt(i.qtd)||0) ? ' × ' + parseInt(i.qtd) : '') : i.tipo==='pontual' ? ' (pontual)' : '/mês'}`; }
@@ -456,6 +469,8 @@ function descreveAlteracao(det){
       [...new Set([...Object.keys(A), ...Object.keys(B)])].forEach(c => {
         if(JSON.stringify(A[c] ?? null) === JSON.stringify(B[c] ?? null)) return;
         if(c==='parcelas') out.push(`Parcelas: ${(A[c]||[]).length} → ${(B[c]||[]).length} (${(B[c]||[]).map(p => brl(p.valor)).join(' + ') || 'sem parcelas'})`);
+        else if(c==='pagamento_pontual') out.push(`${ROTULO_COND[c]}: ${FORMAS_PGTO[A[c]] || '(padrão antigo)'} → ${FORMAS_PGTO[B[c]] || '(padrão antigo)'}`);
+        else if(c==='vencimento_pontual') out.push(`${ROTULO_COND[c]}: ${A[c] ? dataBR(A[c]) : '(sem data)'} → ${B[c] ? dataBR(B[c]) : '(sem data)'}`);
         else if(c==='adicionais' || c==='prazo_marco') out.push(`${ROTULO_COND[c] || c}: ${_curto(A[c])} → ${_curto(B[c])}`);
         else out.push(`${ROTULO_COND[c] || c}: ${_simNao(A[c])} → ${_simNao(B[c])}`);
       });
@@ -485,9 +500,14 @@ function etapaAtual(p){
 const CFG = { SUPABASE_URL:'https://yeujqjtjqtegsnzwwazb.supabase.co', SUPABASE_ANON_KEY:'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlldWpxanRqcXRlZ3Nuend3YXpiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1NDE0OTksImV4cCI6MjEwMTExNzQ5OX0.5p1_wJ_aApJpRrN6tFu8qmAytK5FMXWt1soCubpzqao' };
 const SUPABASE_JS = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js';
 
-const APP_VERSION = '1.4.0';
+const APP_VERSION = '1.4.1';
 const PORTAL_URL = 'https://arteconartescontabeis-design.github.io/portal/';
 const CHANGELOG = [
+  { v:'1.4.1', data:'21/09/2026', itens:[
+    'Condições: a forma de pagamento do valor pontual agora é escolhida numa lista, e o padrão é “Junto com o boleto mensal” (com data de vencimento opcional). As outras opções são: em data de vencimento específica, parcelado e na aceitação da proposta.',
+    'Parcelas ganharam data de vencimento própria e o botão “Dividir em boletos mensais”, que monta as parcelas já vinculadas aos próximos boletos.',
+    'Propostas já emitidas não mudam: quem não tem a nova opção gravada continua com exatamente o mesmo texto de antes.'
+  ]},
   { v:'1.4.0', data:'21/09/2026', itens:[
     'Signatários: a proposta pode ter uma ou mais pessoas para assinar, cada uma com o próprio link. O envio é por e-mail (direto pelo sistema, sem o endereço aparecer na tela) ou por WhatsApp (abre a conversa do cliente com a mensagem pronta).',
     'Assinatura do escritório: obrigatória, feita pelo diretor logado, antes ou depois dos clientes. A proposta só vira Aprovada quando todos os signatários e o escritório assinarem.',
@@ -973,10 +993,11 @@ function novaF(clienteId){
   const e = esc_(), hoje = hojeISO(), c = clienteId ? S.clientes.find(x => x.id===clienteId) : null;
   return { id:null, cliente_id:c ? c.id : null, cliente_nome:c ? c.nome : '', cliente_documento:c ? (c.documento||'') : '', contato:c ? (c.contato||'') : '', tratamento:c ? (c.tratamento||'') : '',
     modelo:'recorrente', exige_foto:false, assunto:ASSUNTO.recorrente, abertura:ABERTURA.recorrente, itens:[], data_proposta:hoje, validade:somaDias(hoje, parseInt(e.validade_dias)||10), observacoes:'', status:'rascunho',
-    condicoes:{ dia_vencimento:parseInt(e.dia_vencimento)||20, indice:e.indice||'IGP-M/FGV', adicional_anual:true, revisao_bimestral:true, taxas_abertura:true, prolabore_sem_custo:true, parcelas:[], prazo_dias:'', prazo_marco:'contados da assinatura do contrato', adicionais:'', aceite:false } };
+    condicoes:{ dia_vencimento:parseInt(e.dia_vencimento)||20, indice:e.indice||'IGP-M/FGV', adicional_anual:true, revisao_bimestral:true, taxas_abertura:true, prolabore_sem_custo:true, pagamento_pontual:'boleto_mensal', vencimento_pontual:'', parcelas:[], prazo_dias:'', prazo_marco:'contados da assinatura do contrato', adicionais:'', aceite:false } };
 }
 function copiaF(p, duplicar){
-  const F = JSON.parse(JSON.stringify(p)); F.condicoes = { ...novaF().condicoes, ...(F.condicoes||{}) }; F.itens = F.itens || [];
+  const F = JSON.parse(JSON.stringify(p)), legado = formaPagamento(p.condicoes); F.condicoes = { ...novaF().condicoes, ...(F.condicoes||{}) }; F.itens = F.itens || [];
+  if(!(p.condicoes||{}).pagamento_pontual) F.condicoes.pagamento_pontual = legado;      // proposta antiga: mantém a forma que ela já tinha
   if(duplicar){ const hoje = hojeISO(); F.id = null; F.numero = null; F.status = 'rascunho'; F.data_proposta = hoje; F.validade = somaDias(hoje, parseInt(esc_().validade_dias)||10); }
   return F;
 }
@@ -1010,8 +1031,13 @@ function desenhaCondicoes(){
     + (F.modelo==='recorrente' ? marca('adicional_anual','Adicional anual em novembro (equivalente a uma parcela mensal, parcelável em 12 vezes)') : '')
     + marca('revisao_bimestral','Revisão bimestral do volume de lançamentos e funcionários')
     + (F.itens.some(i => i.tipo==='por_funcionario') ? marca('prolabore_sem_custo','Pró-labore sem custo adicional') : '');
-  if(temPontual) h += `<div class="rotulo" style="margin:14px 0 6px">Forma de pagamento do valor pontual</div><div id="parcelas">${c.parcelas.map((x,i) => `<div class="parcela"><input type="text" inputmode="decimal" data-p="${i}" data-k="valor" value="${x.valor ? num2(x.valor) : ''}" placeholder="Valor" aria-label="Valor da parcela ${i+1}"><input type="text" data-p="${i}" data-k="descricao" value="${esc(x.descricao||'')}" placeholder="Quando: na aceitação da proposta; na entrega do parecer…" aria-label="Condição da parcela ${i+1}"><button type="button" class="x" style="border:0;background:none;color:var(--vermelho);font-size:20px;cursor:pointer" data-act="delParcela" data-i="${i}" aria-label="Remover parcela">×</button></div>`).join('')}</div>
-      <div class="filtros" style="align-items:center"><button class="btn mini" data-act="addParcela">Adicionar parcela</button><button class="btn mini" data-act="meioMeio">Dividir 50% na aceitação e 50% na entrega</button><span id="somaParcelas" class="dica"></span></div>
+  const forma = formaPagamento(c);
+  if(temPontual) h += `<div class="grade" style="margin-top:14px">
+      <div class="campo"><label for="c_forma">Forma de pagamento do valor pontual</label><select id="c_forma" data-c="pagamento_pontual">${Object.keys(FORMAS_PGTO).map(k => `<option value="${k}" ${forma===k?'selected':''}>${esc(FORMAS_PGTO[k])}${k==='boleto_mensal' ? ' (padrão)' : ''}</option>`).join('')}</select></div>
+      ${forma==='boleto_mensal' || forma==='data' ? `<div class="campo c1"><label for="c_venc">Data de vencimento${forma==='data' ? ' *' : ''}</label><input type="date" id="c_venc" data-c="vencimento_pontual" value="${esc(c.vencimento_pontual||'')}"></div>` : ''}
+      <div class="campo ${forma==='parcelas' ? '' : 'c1'}" style="align-self:end"><span class="dica">${forma==='boleto_mensal' ? 'Sai no boleto dos honorários. A data é opcional.' : forma==='data' ? 'Boleto próprio, com nota fiscal.' : forma==='parcelas' ? 'Cada parcela pode ter data de vencimento e uma condição.' : 'Pago quando o cliente aceitar.'}</span></div></div>
+    ${forma==='parcelas' ? `<div id="parcelas" style="margin-top:10px">${c.parcelas.map((x,i) => `<div class="parcela"><input type="text" inputmode="decimal" data-p="${i}" data-k="valor" value="${x.valor ? num2(x.valor) : ''}" placeholder="Valor" aria-label="Valor da parcela ${i+1}"><input type="date" data-p="${i}" data-k="data" value="${esc(x.data||'')}" aria-label="Vencimento da parcela ${i+1}"><input type="text" data-p="${i}" data-k="descricao" value="${esc(x.descricao||'')}" placeholder="Condição: juntamente com o boleto mensal; na entrega do parecer…" aria-label="Condição da parcela ${i+1}"><button type="button" class="x" style="border:0;background:none;color:var(--vermelho);font-size:20px;cursor:pointer" data-act="delParcela" data-i="${i}" aria-label="Remover parcela">×</button></div>`).join('')}</div>
+      <div class="filtros" style="align-items:center"><button class="btn mini" data-act="addParcela">Adicionar parcela</button><button class="btn mini" data-act="dividirBoletos">Dividir em</button><input type="number" id="c_nbol" min="2" max="12" value="${Math.min(12, Math.max(2, c.parcelas.length || 3))}" style="width:64px;flex:none;min-width:0" aria-label="Número de boletos mensais"><span>boletos mensais</span><button class="btn mini" data-act="meioMeio">50% na aceitação e 50% na entrega</button><span id="somaParcelas" class="dica"></span></div>` : ''}
       <div class="grade"><div class="campo c1"><label for="c_prazo">Prazo de execução (dias)</label><input type="number" id="c_prazo" min="0" data-c="prazo_dias" value="${esc(c.prazo_dias||'')}"></div><div class="campo" style="grid-column:span 3"><label for="c_marco">Contagem do prazo</label><input type="text" id="c_marco" data-c="prazo_marco" value="${esc(c.prazo_marco||'')}"></div></div>`;
   h += marca('taxas_abertura','Cláusula 3.2: taxas de abertura (Jucesc, prefeitura) por conta do contratante');
   $('condicoes').innerHTML = h; recalcula();
@@ -1025,7 +1051,8 @@ function leF(){
   const F = S.F, t = totais(F.itens);
   F.cliente_documento = soDoc(F.cliente_documento);
   F.itens = F.itens.map(i => ({ nome:String(i.nome||'').trim(), descricao:String(i.descricao||'').trim(), tipo:i.tipo, valor:r2(i.valor), qtd:i.tipo==='por_funcionario' ? (parseInt(i.qtd)||0) : 0 }));
-  F.condicoes.parcelas = (F.condicoes.parcelas||[]).filter(x => (+x.valor||0)>0 || String(x.descricao||'').trim());
+  F.condicoes.parcelas = formaPagamento(F.condicoes)==='parcelas' ? (F.condicoes.parcelas||[]).filter(x => (+x.valor||0)>0 || String(x.descricao||'').trim()) : [];
+  if(!['boleto_mensal','data'].includes(formaPagamento(F.condicoes))) F.condicoes.vencimento_pontual = '';
   F.total_mensal = t.mensal; F.total_pontual = t.pontual; return F;
 }
 async function resolveCliente(F){
@@ -1193,7 +1220,12 @@ const ACOES = {
   salvarProposta(){ salvarProposta(); },
   addItem(){ S.F.itens.push({ nome:'', descricao:'', tipo:S.F.modelo==='pontual' ? 'pontual' : 'mensal', valor:0, qtd:0 }); desenhaItens(); desenhaCondicoes(); },
   delItem(el){ S.F.itens.splice(+el.dataset.i, 1); desenhaItens(); desenhaCondicoes(); },
-  addParcela(){ S.F.condicoes.parcelas.push({ valor:0, descricao:'' }); desenhaCondicoes(); },
+  addParcela(){ S.F.condicoes.parcelas.push({ valor:0, data:'', descricao:'' }); desenhaCondicoes(); },
+  dividirBoletos(){ const F = S.F, t = totais(F.itens).pontual, n = Math.min(12, Math.max(2, parseInt($('c_nbol').value) || 3)); if(!t){ toast('Informe antes o valor do serviço pontual.', true); return; }
+    const base = r2(Math.floor(t / n * 100) / 100), dia = Math.min(28, parseInt(F.condicoes.dia_vencimento) || 20), [y, m] = (F.data_proposta || hojeISO()).split('-').map(Number);
+    F.condicoes.parcelas = Array.from({ length:n }, (_, i) => { const d = new Date(Date.UTC(y, m - 1 + i + 1, dia)), mm = d.getUTCMonth();
+      return { valor:i===n-1 ? r2(t - base*(n-1)) : base, data:d.toISOString().slice(0,10), descricao:`juntamente com o boleto mensal de ${MESES[mm]}/${d.getUTCFullYear()}${i===n-1 ? '.' : ';'}` }; });
+    desenhaCondicoes(); },
   delParcela(el){ S.F.condicoes.parcelas.splice(+el.dataset.i, 1); desenhaCondicoes(); },
   meioMeio(){ const t = totais(S.F.itens).pontual; if(!t){ toast('Informe antes o valor do serviço pontual.', true); return; } const a = r2(t/2); S.F.condicoes.parcelas = [{ valor:a, descricao:'na aceitação da proposta;' },{ valor:r2(t-a), descricao:'no término dos trabalhos, com a entrega do material.' }]; desenhaCondicoes(); },
   async excluirProposta(el){ const p = S.propostas.find(x => x.id===el.dataset.id); if(!p || !confirm(`Excluir a proposta ${numeroFmt(p)} de ${p.cliente_nome}? O número não é reaproveitado.`)) return;
@@ -1247,6 +1279,7 @@ document.addEventListener('change', async ev => {
   if(el.id==='addCatalogo' && el.value){ const s = S.servicos.find(x => x.id===el.value); if(s) S.F.itens.push({ nome:s.nome, descricao:s.descricao||'', tipo:s.tipo, valor:+s.valor_padrao||0, qtd:0 }); el.value = ''; desenhaItens(); desenhaCondicoes(); return; }
   if(el.id==='f_foto'){ S.F.exige_foto = el.checked; return; }
   if(el.dataset.c && el.type==='checkbox'){ S.F.condicoes[el.dataset.c] = el.checked; return; }
+  if(el.dataset.c==='pagamento_pontual'){ S.F.condicoes.pagamento_pontual = el.value; desenhaCondicoes(); return; }
   if(el.dataset.f==='modelo'){ const antes = el.value==='pontual' ? 'recorrente' : 'pontual';
     if(S.F.abertura===ABERTURA[antes]) S.F.abertura = ABERTURA[el.value]; if(S.F.assunto===ASSUNTO[antes]) S.F.assunto = ASSUNTO[el.value]; VIEWS.form(); return; }
   if(el.dataset.i!==undefined && el.dataset.k==='tipo'){ desenhaItens(); desenhaCondicoes(); return; }
