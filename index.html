@@ -567,10 +567,13 @@ function porSituacao(props){
 const CFG = { SUPABASE_URL:'https://yeujqjtjqtegsnzwwazb.supabase.co', SUPABASE_ANON_KEY:'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlldWpxanRqcXRlZ3Nuend3YXpiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1NDE0OTksImV4cCI6MjEwMTExNzQ5OX0.5p1_wJ_aApJpRrN6tFu8qmAytK5FMXWt1soCubpzqao' };
 const SUPABASE_JS = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js';
 
-const APP_VERSION = '1.6.1';
+const APP_VERSION = '1.6.2';
 const LOGO_EMAIL = 'https://arteconartescontabeis-design.github.io/propostas/logo_artecon.png';
 const PORTAL_URL = 'https://arteconartescontabeis-design.github.io/portal/';
 const CHANGELOG = [
+  { v:'1.6.2', data:'21/09/2026', itens:[
+    'E-mails: o botão (“Ler e assinar a proposta”, “Abrir a via assinada”) passou a ser montado em tabela, porque o Outlook para Windows ignorava o espaçamento e mostrava o botão como uma etiqueta pequena. A mesma correção entrou na função prop-email, dos e-mails automáticos.'
+  ]},
   { v:'1.6.1', data:'21/09/2026', itens:[
     'Visão geral clicável: cada indicador do topo, cada fatia da rosca, cada barra de valor e cada linha do funil abre a lista de propostas já filtrada por aquela informação (com a etiqueta do filtro e o botão para limpar).',
     'Gráfico de operações: clicar numa coluna mostra só as operações daquele dia; clicar num item da legenda mostra só aquele tipo; os dois filtros se combinam. A lista abaixo do gráfico acompanha o filtro.',
@@ -1048,7 +1051,7 @@ function emailArtecon(m){
 <tr><td style="padding:26px 30px 10px;font-size:14px;line-height:1.6">
 ${m.saudacao ? `<p style="margin:0 0 12px">${esc(m.saudacao)}</p>` : ''}${m.paragrafos.map(p => `<p style="margin:0 0 12px">${p}</p>`).join('')}
 ${chaves ? `<table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin:16px 0;background:#f0fafe;border-left:4px solid #00AEEF"><tr><td style="padding:10px 16px"><table role="presentation" cellpadding="0" cellspacing="0">${chaves}</table></td></tr></table>` : ''}
-${m.botao ? `<p style="text-align:center;margin:24px 0 18px"><a href="${esc(m.botao.url)}" style="background:#BC151B;color:#ffffff;text-decoration:none;padding:13px 28px;font-weight:bold;display:inline-block">${esc(m.botao.txt)}</a></p>
+${m.botao ? `<table role="presentation" cellpadding="0" cellspacing="0" align="center" style="margin:24px auto 18px"><tr><td align="center" bgcolor="#BC151B" style="background:#BC151B;padding:13px 30px"><a href="${esc(m.botao.url)}" style="color:#ffffff;text-decoration:none;font-weight:bold;font-size:15px;font-family:Arial,Helvetica,sans-serif;display:block">${esc(m.botao.txt)}</a></td></tr></table>
 <p style="font-size:12px;color:#6f6b6c;margin:0 0 12px">Se o botão não abrir, copie este endereço no navegador:<br><span style="word-break:break-all">${esc(m.botao.url)}</span></p>` : ''}
 ${m.aviso ? `<p style="font-size:12px;color:#6f6b6c;margin:0 0 12px">${esc(m.aviso)}</p>` : ''}
 </td></tr>
