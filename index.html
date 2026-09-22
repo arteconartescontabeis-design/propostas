@@ -567,10 +567,18 @@ function porSituacao(props){
 const CFG = { SUPABASE_URL:'https://yeujqjtjqtegsnzwwazb.supabase.co', SUPABASE_ANON_KEY:'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlldWpxanRqcXRlZ3Nuend3YXpiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1NDE0OTksImV4cCI6MjEwMTExNzQ5OX0.5p1_wJ_aApJpRrN6tFu8qmAytK5FMXWt1soCubpzqao' };
 const SUPABASE_JS = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js';
 
-const APP_VERSION = '1.6.4';
+const APP_VERSION = '1.7.0';
 const LOGO_EMAIL = 'https://arteconartescontabeis-design.github.io/propostas/logo_artecon.png';
 const PORTAL_URL = 'https://arteconartescontabeis-design.github.io/portal/';
 const CHANGELOG = [
+  { v:'1.7.0', data:'21/09/2026', itens:[
+    'Descarte LGPD: cada proposta é guardada por 5 anos contados da última movimentação (envio, assinatura, perda ou validade). Vencido o prazo, o sistema elimina sozinho, no dia 1º de cada mês, a proposta e todos os dados pessoais ligados a ela (signatários, CPF, IP, fotos, links e e-mails), guardando só uma linha de estatística sem dado pessoal. Cliente sem nenhuma proposta e sem alteração há 5 anos também é eliminado.',
+    'Controle da proposta mostra “Guarda até”. O diretor pode estender a guarda de uma proposta (ex.: ação judicial ou fiscalização), com motivo.',
+    'Escritório: quadro “Descarte (LGPD)” com o prazo (mínimo de 5 anos), o próximo descarte previsto e o total já descartado. O aviso de privacidade mostrado ao cliente passa a citar esse prazo quando o campo “Prazo de guarda” estiver em branco.',
+    '“Exigir foto com documento” vem marcado por padrão nas propostas novas.',
+    'Botão “Baixar Word” retirado: o documento sai só em PDF.',
+    'Banco: migração 13 (tabelas prop_retencao e prop_descartes, funções de descarte e agendamento mensal).'
+  ]},
   { v:'1.6.4', data:'21/09/2026', itens:[
     'Tela da proposta: os botões de envio saíram do painel Assinaturas e foram para o topo, ao lado de Editar e Duplicar — “Enviar por e-mail”, “Enviar por WhatsApp” e “Assinar pelo escritório” (quando falta). Depois de todos assinarem, viram “Reenviar via por e-mail” e “Via por WhatsApp”.',
     'Envio por e-mail no topo manda para todos os signatários que ainda não assinaram; o WhatsApp abre direto quando há uma pessoa só, ou pergunta para quem quando há mais de uma. Sem signatário cadastrado, o botão abre o cadastro.',
@@ -725,7 +733,7 @@ const Local = {
   async historico(id){ return this.db.historico.filter(h => h.proposta_id===id).sort((a,b) => a.criado_em < b.criado_em ? -1 : 1); },
   async salvarEscritorio(e){ this.db.tenant.escritorio = e; this.grava(); },
   async linhaDoTempo(id){ return (await this.historico(id)).map(h => ({ quando:h.criado_em, tipo:h.de ? 'status' : 'criada', quem:h.usuario_email, detalhe:{ de:h.de, para:h.para } })); },
-  async signatarios(){ return []; }, async linksDe(){ return []; }, async assinaturas(){ return []; }, async filaDe(){ return null; }, async naoAbertos(){ return []; },
+  async signatarios(){ return []; }, async linksDe(){ return []; }, async assinaturas(){ return []; }, async guarda(){ return null; }, async descarteResumo(){ return null; }, async filaDe(){ return null; }, async naoAbertos(){ return []; },
   async atividades(dias){ const desde = new Date(Date.now() - dias*864e5).toISOString(), px = Object.fromEntries(this.db.propostas.map(p => [p.id, p]));
     return { completo:true, lista:this.db.historico.filter(h => h.criado_em >= desde && px[h.proposta_id]).map(h => { const p = px[h.proposta_id]; return { quando:h.criado_em, tipo:h.de ? 'status' : 'criada', quem:h.usuario_email, detalhe:{ de:h.de, para:h.para }, proposta_id:p.id, numero:p.numero, ano:p.ano, cliente_nome:p.cliente_nome }; }).sort((a,b) => a.quando < b.quando ? 1 : -1) }; },
   async sair(){}
@@ -785,6 +793,10 @@ const Nuvem = {
   async signatarios(id){ const { data, error } = await this.sb.from('prop_signatarios').select('*').eq('proposta_id', id).is('excluido_em', null).order('ordem').order('criado_em'); if(error) throw this.erro(error); return data; },
   async salvarSignatario(id, row){ const q = id ? this.sb.from('prop_signatarios').update(row).eq('id', id) : this.sb.from('prop_signatarios').insert({ ...row, tenant_id:S.tenant.id }); const { error } = await q.select().single(); if(error) throw this.erro(error); },
   async linksDe(id){ const { data, error } = await this.sb.from('prop_links').select('id,signatario_id,tipo,canal,enviado_para,criado_em,enviado_em,expira_em,acessos,primeiro_acesso_em,ultimo_acesso_em').eq('proposta_id', id).is('revogado_em', null); if(error) throw this.erro(error); return data; },
+  // descarte LGPD (migração 13). null = banco ainda sem a migração: a tela simplesmente não mostra.
+  async guarda(id){ const { data, error } = await this.sb.rpc('prop_descarte_previsto', { p_proposta:id }); return error ? null : data; },
+  async reter(id, ate, motivo){ const { data, error } = await this.sb.rpc('prop_reter', { p_proposta:id, p_ate:ate, p_motivo:motivo }); if(error) throw this.erro(error); return data; },
+  async descarteResumo(){ const { data, error } = await this.sb.rpc('prop_descarte_resumo'); return error ? null : data; },
   async assinaturas(id){ const { data, error } = await this.sb.rpc('prop_assinaturas_ver', { p_proposta:id }); if(error) throw this.erro(error); return data || []; },
   async recarregar(id){ const { data, error } = await this.sb.from('prop_propostas').select('*').eq('id', id).single(); if(error) throw this.erro(error); const i = S.propostas.findIndex(x => x.id===id); if(i>=0) S.propostas[i] = data; return data; },
   async linkSignatario(sid, tipo, canal){ const { data, error } = await this.sb.rpc('prop_link_signatario', { p_signatario:sid, p_tipo:tipo, p_canal:canal }); if(error) throw this.erro(error); return data; },
@@ -932,27 +944,27 @@ const VIEWS = {
     const venc = p.validade && p.validade<hojeISO() && (p.status==='enviada'||p.status==='negociacao');
     const etapas = [['Criada', p.criado_em], ['Enviada', p.enviada_em], ['Clientes assinaram', p.clientes_assinaram_em], ['Escritório assinou', p.escritorio_assinou_em], ['Aprovada', p.aprovada_em], ['Perdida', p.status==='perdida' ? p.perdida_em : null], [p.escritorio_assinou_em ? 'Assinada por todos' : 'Assinada pelo cliente', p.assinada_em], ['Via assinada enviada', p.via_enviada_em]].filter(x => x[1]);
     $('conteudo').innerHTML = topo(previa ? 'Prévia do documento' : 'Proposta ' + numeroFmt(p), p.cliente_nome,
-      `<button class="btn" data-act="${previa?'voltarForm':'irPropostas'}">Voltar</button>${previa ? '' : `<button class="btn" id="btnEditar" data-act="editar" data-id="${p.id}" ${travada || p.escritorio_assinou_em || p.clientes_assinaram_em ? 'disabled title="Proposta com assinatura não pode ser alterada. Para mudar, use Duplicar."' : p.status==='aprovada'?'disabled title="Proposta aprovada fica congelada. Volte o status para editar."':''}>Editar</button><button class="btn" data-act="duplicar" data-id="${p.id}">Duplicar</button><span id="topoEnvio" style="display:contents"></span>`}<button class="btn" data-act="word">Baixar Word</button><button class="btn primario" data-act="imprimir">Imprimir / salvar PDF</button>`) +
+      `<button class="btn" data-act="${previa?'voltarForm':'irPropostas'}">Voltar</button>${previa ? '' : `<button class="btn" id="btnEditar" data-act="editar" data-id="${p.id}" ${travada || p.escritorio_assinou_em || p.clientes_assinaram_em ? 'disabled title="Proposta com assinatura não pode ser alterada. Para mudar, use Duplicar."' : p.status==='aprovada'?'disabled title="Proposta aprovada fica congelada. Volte o status para editar."':''}>Editar</button><button class="btn" data-act="duplicar" data-id="${p.id}">Duplicar</button><span id="topoEnvio" style="display:contents"></span>`}<button class="btn primario" data-act="imprimir">Imprimir / salvar PDF</button>`) +
       (previa ? '' : `<div class="painel"><h2>Controle</h2>
         <div class="filtros" style="align-items:center;margin:0 0 10px">${selo(p.status)}${travada ? ` <span class="selo aprovada">${p.escritorio_assinou_em ? 'Assinada por todos' : 'Assinada pelo cliente'}</span>` : ''} <span>Mensal <b>${brl(p.total_mensal)}</b></span> <span>Pontual <b>${brl(p.total_pontual)}</b></span> <span>Validade <b class="${venc ? 'vencida':''}">${p.validade ? dataBR(p.validade) : '—'}</b></span></div>
         <div class="etapas">${etapas.map(x => `<div><span>${esc(x[0])}</span><b>${esc(dataHora(x[1]))}</b></div>`).join('')}</div>
-        ${p.observacoes ? `<p style="margin:12px 0 0"><b>Anotações internas:</b> ${esc(p.observacoes)}</p>` : ''}</div>
+        ${p.observacoes ? `<p style="margin:12px 0 0"><b>Anotações internas:</b> ${esc(p.observacoes)}</p>` : ''}<div id="guardaLGPD"></div></div>
       <div class="painel"><h2>Assinaturas</h2><div id="assinaturas">Carregando…</div></div>
       <div class="painel"><h2>Histórico</h2><ul class="linha-tempo" id="hist"><li>Carregando…</li></ul></div>`) +
       `<div class="doc-area" id="docArea">${docHTML(p)}</div>`;
     if(!previa) tenta(async () => {
-      const [lt, sigs, links, ass, fila] = await Promise.all([DB.linhaDoTempo(p.id), DB.signatarios(p.id), DB.linksDe(p.id), DB.assinaturas(p.id), DB.filaDe(p.id)]);
+      const [lt, sigs, links, ass, fila, guarda] = await Promise.all([DB.linhaDoTempo(p.id), DB.signatarios(p.id), DB.linksDe(p.id), DB.assinaturas(p.id), DB.filaDe(p.id), DB.guarda(p.id)]);
       if(S.view!=='documento' || S.docId!==p.id) return;
       S.doc = { sigs, links, ass, fila }; S.filaAtiva = fila !== null;
       $('hist').innerHTML = lt.map(linhaTempoHTML).join('') || '<li>Sem registros.</li>';
-      desenhaAssinaturas(p); desenhaTopoEnvio(p);
+      desenhaAssinaturas(p); desenhaTopoEnvio(p); desenhaGuarda(p, guarda);
       if(ass.length && $('btnEditar')){ $('btnEditar').disabled = true; $('btnEditar').title = 'Proposta com assinatura não pode ser alterada. Para mudar, use Duplicar.'; }
       if(S._rolarAss){ S._rolarAss = false; const a = $('assinaturas'); if(a) a.closest('.painel').scrollIntoView({ behavior:'smooth', block:'start' }); }
       if(ass.length) $('docArea').innerHTML = docHTML(p, ass, { fotos:true });
     });
   },
 
-  escritorio(){
+  escritorio(){ setTimeout(carregaDescarte, 0);
     const e = esc_(), pode = S.perfil==='diretor', d = pode ? '' : 'disabled';
     const campo = (k, rot, cls, tipo) => `<div class="campo ${cls||''}"><label for="e_${k}">${rot}</label><input type="${tipo||'text'}" id="e_${k}" data-e="${k}" value="${esc(e[k] ?? '')}" ${d}></div>`;
     $('conteudo').innerHTML = topo('Escritório','Dados que saem na capa, no cabeçalho e na assinatura das propostas.','') + `
@@ -964,8 +976,11 @@ const VIEWS = {
     </div><div class="barra-salvar" style="margin-top:16px"><button class="btn primario" data-act="salvarEscritorio" ${d}>Salvar dados do escritório</button></div></div>
     <div class="painel"><h2>Avisos ao escritório e privacidade</h2><div class="grade">
       ${campo('email_avisos','E-mail que recebe os avisos (cliente abriu, assinou, todos assinaram)','c4','email')}${campo('email_privacidade','E-mail para assuntos de privacidade','c4','email')}${campo('prazo_guarda','Prazo de guarda informado ao cliente','c4')}
-    </div><p class="dica" style="margin:10px 0 0">Em branco, o aviso usa o telefone do escritório como contato e o texto “pelo prazo da relação contratual e pelos prazos legais de prescrição”.</p>
+    </div><p class="dica" style="margin:10px 0 0">Em branco, o aviso usa o telefone do escritório como contato e o prazo do quadro “Descarte (LGPD)” abaixo.</p>
     <div class="barra-salvar" style="margin-top:12px"><button class="btn primario" data-act="salvarEscritorio" ${d}>Salvar</button></div></div>
+    ${MODO_NUVEM ? `<div class="painel"><h2>Descarte (LGPD)</h2><div class="grade">${campo('descarte_anos','Prazo de guarda das propostas (anos, mínimo 5)','c1','number')}<div class="campo c3" style="align-self:end"><span class="dica">Contado da última movimentação da proposta. Vencido o prazo, o sistema elimina a proposta e os dados pessoais ligados a ela no dia 1º de cada mês. Para manter uma proposta por mais tempo, use “Estender guarda” no Controle dela.</span></div></div>
+      <div id="descarteResumo" style="margin-top:12px"><p class="dica">Carregando…</p></div>
+      <div class="barra-salvar" style="margin-top:12px"><button class="btn primario" data-act="salvarEscritorio" ${d}>Salvar</button></div></div>` : ''}
     <div class="painel"><h2>Cópia de segurança</h2><p>Baixa um arquivo JSON com clientes, serviços e propostas deste escritório.</p><button class="btn" data-act="backup">Exportar backup</button></div>`;
   },
 
@@ -1000,6 +1015,11 @@ function graficoOps(dias){
   const tot = OPS.map(([k, rot, cor]) => [rot, cor, dias.reduce((a,d) => a + d[k], 0)]);
   return `<svg viewBox="0 0 ${W} ${H}" class="g-ops" role="img" aria-label="Operações por dia nos últimos ${dias.length} dias. ${esc(tot.filter(t => t[2]).map(t => t[0] + ': ' + t[2]).join(', ') || 'Nenhuma operação')}">${grade}${cols}</svg>
     <div class="g-leg">${OPS.map(([k, rot, cor], j) => `<button class="g-cls ${(S.opsFiltro||{}).classe===k ? 'ativo' : ''}" data-act="opsFiltrar" data-classe="${k}" ${tot[j][2] ? '' : 'disabled'} title="Ver só: ${esc(rot)}"><i style="background:${cor}"></i>${esc(rot)} <b>${tot[j][2]}</b></button>`).join('')}</div>`;
+}
+async function carregaDescarte(){
+  const el = $('descarteResumo'); if(!el) return; const r = await DB.descarteResumo(); if(!$('descarteResumo')) return;
+  if(!r){ el.innerHTML = '<p class="dica">Rode no banco a migração 13_migracao_v1_7_0_descarte.sql para ligar o descarte automático.</p>'; return; }
+  el.innerHTML = `<div class="etapas"><div><span>Prazo em uso</span><b>${esc(String(r.anos))} anos</b></div><div><span>Próximo descarte previsto</span><b>${r.proximo ? esc(dataBR(r.proximo)) : '—'}</b></div><div><span>Previstos nos próximos 12 meses</span><b>${esc(String(r.em_12_meses))}</b></div><div><span>Com guarda estendida</span><b>${esc(String(r.retidas))}</b></div>${S.perfil==='diretor' ? `<div><span>Já descartadas</span><b>${esc(String(r.descartadas))}${r.ultimo_descarte ? ' · última em ' + esc(dataBR(r.ultimo_descarte.slice(0,10))) : ''}</b></div>` : ''}</div>`;
 }
 async function carregaNaoAbertos(){
   const l = await DB.naoAbertos().catch(() => []); if(S.view!=='painel' || !l.length) return;
@@ -1139,6 +1159,20 @@ function filaHTML(p){
 const ICO_MAIL = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" style="vertical-align:-3px;margin-right:4px"><rect x="3" y="5" width="18" height="14" rx="1.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3.5 6l8.5 7 8.5-7" fill="none" stroke="currentColor" stroke-width="2"/></svg>';
 const ICO_ZAP = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" style="vertical-align:-3px;margin-right:4px"><path d="M12 3a9 9 0 0 0-7.8 13.5L3 21l4.6-1.2A9 9 0 1 0 12 3z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M9 8.5c.3 2.7 2.8 5.3 5.5 5.9l1.2-1.3-1.9-1-.9.8c-.9-.4-1.9-1.4-2.3-2.3l.8-.9-1-1.9z" fill="currentColor"/></svg>';
 function fmtCel(c){ return String(c||'').replace(/^(\d{2})(\d{4,5})(\d{4})$/,'($1) $2-$3'); }
+function desenhaGuarda(p, g){
+  const el = $('guardaLGPD'); if(!el || !g || !g.guarda_ate) return;
+  el.innerHTML = `<p class="dica" style="margin:10px 0 0">Guarda (LGPD) até <b>${esc(dataBR(g.guarda_ate))}</b>${g.reter_ate ? ` — <b>estendida</b> por ${esc(g.motivo || '')}` : ` — ${esc(String(g.anos))} anos da última movimentação`}. Depois disso a proposta e os dados pessoais ligados a ela são eliminados.
+    ${S.perfil==='diretor' ? `<button class="btn mini" data-act="dlgGuarda" style="margin-left:6px">${g.reter_ate ? 'Alterar guarda' : 'Estender guarda'}</button>` : ''}</p>`;
+  S.guardaAtual = g;
+}
+function dlgGuarda(){
+  const g = S.guardaAtual || {}, min = somaDias(hojeISO(), 1);
+  $('dlg').innerHTML = `<h2>Guarda estendida (LGPD)</h2><p style="margin-top:-6px">Use quando houver motivo para manter a proposta além do prazo normal — por exemplo, ação judicial, fiscalização ou pedido de autoridade. Fica registrado quem definiu e quando.</p>
+    <div class="grade"><div class="campo c1"><label for="r_ate">Manter até *</label><input type="date" id="r_ate" min="${min}" value="${esc(g.reter_ate || '')}"></div>
+    <div class="campo c3"><label for="r_mot">Motivo *</label><input type="text" id="r_mot" maxlength="200" value="${esc(g.motivo || '')}" placeholder="Ex.: ação judicial nº …"></div></div>
+    <div class="barra-salvar" style="margin-top:14px">${g.reter_ate ? '<button class="btn" data-act="guardaTirar">Voltar ao prazo normal</button>' : ''}<button class="btn" data-act="fecharDlg">Cancelar</button><button class="btn primario" data-act="guardaSalvar">Salvar</button></div>`;
+  $('dlg').showModal();
+}
 function desenhaTopoEnvio(p){
   const el = $('topoEnvio'); if(!el || !MODO_NUVEM || S.docPrevia || !S.doc) return;
   const fim = !!p.assinada_em, aberta = ['rascunho','enviada','negociacao'].includes(p.status);
@@ -1200,7 +1234,7 @@ function listarPropostas(){
 function novaF(clienteId){
   const e = esc_(), hoje = hojeISO(), c = clienteId ? S.clientes.find(x => x.id===clienteId) : null;
   return { id:null, cliente_id:c ? c.id : null, cliente_nome:c ? c.nome : '', cliente_documento:c ? (c.documento||'') : '', contato:c ? (c.contato||'') : '', tratamento:c ? (c.tratamento||'') : '',
-    modelo:'recorrente', exige_foto:false, assunto:ASSUNTO.recorrente, abertura:ABERTURA.recorrente, itens:[], data_proposta:hoje, validade:somaDias(hoje, parseInt(e.validade_dias)||10), observacoes:'', status:'rascunho',
+    modelo:'recorrente', exige_foto:true, assunto:ASSUNTO.recorrente, abertura:ABERTURA.recorrente, itens:[], data_proposta:hoje, validade:somaDias(hoje, parseInt(e.validade_dias)||10), observacoes:'', status:'rascunho',
     condicoes:{ dia_vencimento:parseInt(e.dia_vencimento)||20, indice:e.indice||'IGP-M/FGV', adicional_anual:true, revisao_bimestral:true, taxas_abertura:true, prolabore_sem_custo:true, pagamento_pontual:'boleto_mensal', vencimento_pontual:'', parcelas:[], prazo_dias:'', prazo_marco:'contados da assinatura do contrato', adicionais:'', aceite:false } };
 }
 function copiaF(p, duplicar){
@@ -1459,6 +1493,12 @@ const ACOES = {
   async viaTodos(){ const p = S.propostas.find(x => x.id===S.docId); if(!p) return; await tenta(async () => { await enviarViaATodos(p); await DB.recarregar(p.id); }); VIEWS.documento(); },
   async filaAgora(){ await tenta(async () => { const r = await DB.filaDisparar(); toast(/^disparado/.test(r) ? 'Fila acionada. Atualizando em instantes…' : 'Não foi possível acionar: ' + r, !/^disparado/.test(r)); setTimeout(() => { if(S.view==='documento') VIEWS.documento(); }, 4000); }); },
   escAssinar(){ dlgEscritorio(); },
+  dlgGuarda(){ dlgGuarda(); },
+  async guardaSalvar(){ const ate = $('r_ate').value, mot = $('r_mot').value.trim();
+    if(!ate){ toast('Informe até quando manter.', true); return; } if(mot.length < 5){ toast('Informe o motivo.', true); return; }
+    await tenta(async () => { await DB.reter(S.docId, ate, mot); $('dlg').close(); toast('Guarda estendida registrada.'); VIEWS.documento(); }); },
+  async guardaTirar(){ if(!confirm('Voltar ao prazo normal de guarda desta proposta?')) return;
+    await tenta(async () => { await DB.reter(S.docId, null, null); $('dlg').close(); toast('Guarda voltou ao prazo normal.'); VIEWS.documento(); }); },
   async escConfirmar(){ const p = S.propostas.find(x => x.id===S.docId), nome = $('x_nome').value.trim().replace(/\s+/g,' '), cpf = soDoc($('x_cpf').value);
     if(nome.length<5 || !nome.includes(' ')){ toast('Informe o nome completo.', true); return; } if(!cpfValido(cpf)){ toast('CPF inválido.', true); return; } if(!$('x_ok').checked){ toast('Marque a declaração para assinar.', true); return; }
     await tenta(async () => { const r = await DB.escritorioAssinar(p.id, nome, cpf); $('dlg').close();
@@ -1500,7 +1540,7 @@ const ACOES = {
     await tenta(async () => { await DB.alterar('servicos', s.id, { excluido_em:new Date().toISOString() }); toast('Serviço excluído.'); ir('servicos'); }); },
   async salvarEscritorio(){
     const e = { ...esc_() }; document.querySelectorAll('[data-e]').forEach(i => e[i.dataset.e] = i.value.trim());
-    e.dia_vencimento = Math.min(31, Math.max(1, parseInt(e.dia_vencimento)||20)); e.validade_dias = Math.max(1, parseInt(e.validade_dias)||10); e.valor_funcionario = parseValor(e.valor_funcionario); e.cpf_responsavel = soDoc(e.cpf_responsavel || '');
+    e.dia_vencimento = Math.min(31, Math.max(1, parseInt(e.dia_vencimento)||20)); e.validade_dias = Math.max(1, parseInt(e.validade_dias)||10); e.valor_funcionario = parseValor(e.valor_funcionario); e.cpf_responsavel = soDoc(e.cpf_responsavel || ''); if('descarte_anos' in e) e.descarte_anos = String(Math.min(30, Math.max(5, parseInt(e.descarte_anos) || 5)));
     if(e.cpf_responsavel && !cpfValido(e.cpf_responsavel)){ toast('CPF de quem assina pelo escritório está inválido.', true); return; }
     await tenta(async () => { await DB.salvarEscritorio(e); toast('Dados do escritório salvos.'); ir('escritorio'); });
   },
@@ -1569,7 +1609,7 @@ function avisoPrivacidade(r){
     <p><b>O que é registrado:</b> nome, CPF, e-mail e qualidade informados por você; endereço IP, navegador, data e hora; os acessos a este link${r.exige_foto ? '; e a foto sua com o documento' : ''}.</p>
     <p><b>Para quê:</b> formalizar o aceite desta proposta e comprovar quem assinou e o que foi assinado (execução de procedimentos preliminares a contrato e exercício regular de direitos${r.exige_foto ? '; a foto, para prevenir fraude na identificação do signatário' : ''}). Os dados não são usados para publicidade.</p>
     <p><b>Com quem:</b> ficam em serviços contratados pelo escritório para hospedar o sistema e enviar e-mails, que podem estar em servidores fora do Brasil. Só a direção do escritório vê o CPF completo, o IP e a foto.</p>
-    <p><b>Por quanto tempo:</b> ${esc(e.prazo_guarda || 'pelo prazo da relação contratual e pelos prazos legais de prescrição')}.</p>
+    <p><b>Por quanto tempo:</b> ${esc(e.prazo_guarda || `${Math.max(5, parseInt(e.descarte_anos) || 5)} anos contados da última movimentação da proposta; depois disso, os dados são eliminados`)}.</p>
     <p><b>Seus direitos:</b> você pode pedir acesso, correção e informações sobre o tratamento${contato ? ' pelo contato ' + esc(contato) : ' ao escritório'}. O registro de uma proposta assinada é mantido enquanto for necessário para comprovar o aceite.</p></details>`;
 }
 async function telaCliente(){
