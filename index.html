@@ -187,6 +187,80 @@ table.miolo .comprovante th{width:48mm;background:#f2f4f5;font-weight:700}
 dialog.largo{width:min(820px,94vw)}
 dialog .linha-tempo{max-height:60vh;overflow:auto}
 
+/* ---------- v1.9.0: cabeçalho da proposta, abas, cartões, lista ---------- */
+.voltar{background:none;border:0;color:var(--suave);cursor:pointer;font:inherit;padding:0 0 8px}
+.voltar:hover{color:var(--vermelho)}
+.cab{background:var(--branco);border:1px solid var(--linha);border-top:5px solid var(--vermelho);padding:16px 20px;margin-bottom:16px}
+.cab-l1{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.cab-l1 h1{font:500 28px/1.1 var(--titulo);margin:0;color:var(--cinza)}
+.cab-l1 .cli{color:var(--suave)}
+.cab-l2{display:flex;gap:26px;flex-wrap:wrap;margin:12px 0 0;padding-top:12px;border-top:1px solid var(--linha)}
+.cab-l2>div span{display:block;font-size:12px;color:var(--suave)}
+.cab-l2>div b{font-size:15px}
+.cab .acoes{margin-top:14px}
+.menu-mais{position:relative;display:inline-block}
+.lista-mais{position:absolute;right:0;top:calc(100% + 4px);background:var(--branco);border:1px solid var(--linha);box-shadow:0 8px 20px rgba(0,0,0,.12);min-width:215px;z-index:20;display:none;text-align:left}
+.menu-mais.aberto .lista-mais{display:block}
+.lista-mais button{display:block;width:100%;text-align:left;border:0;background:none;padding:9px 14px;font:inherit;cursor:pointer;border-bottom:1px solid var(--linha)}
+.lista-mais button:hover:not(:disabled){background:#f3f8fa}
+.lista-mais button:disabled{opacity:.45;cursor:not-allowed}
+.passo{display:flex;align-items:center;gap:14px;background:#fffbe0;border-left:5px solid var(--amarelo);padding:12px 16px;margin-bottom:16px}
+.passo.ok{background:#e9f7ef;border-left-color:var(--verde)}
+.passo.cinza{background:#f3f5f6;border-left-color:var(--suave)}
+.passo .ico-passo{font-size:20px}
+.passo b{display:block}.passo .dica{display:block}
+.passo .btn{margin-left:auto;flex:none}
+.painel-abas{padding:0}
+.painel-abas .aba{display:flex;gap:2px;border-bottom:2px solid var(--linha);padding:0 8px;flex-wrap:wrap}
+.painel-abas .aba button{border:0;background:none;padding:12px 16px;font:inherit;font-weight:700;color:var(--suave);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px}
+.painel-abas .aba button.on{color:var(--vermelho);border-bottom-color:var(--vermelho)}
+.painel-abas .conteudo-aba{padding:18px 20px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+.card{border:1px solid var(--linha);border-left:4px solid var(--linha);padding:13px 14px}
+.card.assinou{border-left-color:var(--verde)}.card.aguarda{border-left-color:var(--ciano)}
+.card>b{display:block;margin-bottom:3px}
+.card small{display:block;color:var(--suave)}
+.card .acs{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}
+.trilha{display:flex;flex-wrap:wrap}
+.et{flex:1;min-width:120px;padding:10px 12px 10px 18px;background:#f6f9fb;border:1px solid var(--linha);border-left:0;position:relative}
+.et:first-child{border-left:1px solid var(--linha)}
+.et.feito{background:var(--branco)}
+.et b{display:block;font-size:13px;color:var(--cinza)}.et span{font-size:12px;color:var(--suave)}
+.et i{position:absolute;left:-1px;top:0;bottom:0;width:4px;background:var(--linha)}
+.et.feito i{background:var(--verde)}.et.atual i{background:var(--amarelo)}
+.resumo-topo{display:grid;grid-template-columns:repeat(5,1fr);margin-bottom:16px}
+.resumo-topo .ind{border-top-color:var(--ciano)}
+.resumo-topo .ind:nth-child(2){border-top-color:var(--amarelo)}.resumo-topo .ind:nth-child(3){border-top-color:var(--vermelho)}
+.resumo-topo .ind:nth-child(4){border-top-color:var(--verde)}.resumo-topo .ind:nth-child(5){border-top-color:var(--cinza)}
+.resumo-topo .ind b{display:block;font:500 22px var(--titulo);margin:2px 0}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px}
+.chip{border:1px solid var(--linha);background:var(--branco);padding:6px 12px;font:inherit;font-size:12.5px;cursor:pointer;display:flex;gap:7px;align-items:center}
+.chip.on{border-color:var(--ciano);background:#e4f5fd;color:#056a90;font-weight:700}
+.chip.alerta{border-left:4px solid var(--vermelho)}
+.chip b{background:#eef3f6;padding:1px 7px;font-size:11.5px}
+.chip:disabled{opacity:.5;cursor:default}
+.chip-aviso{display:flex;gap:10px;align-items:center;flex-wrap:wrap;border-left:4px solid var(--ciano);background:#f0fafe;padding:8px 12px;margin:0 0 12px}
+.lista-prop td{vertical-align:top}
+.lista-prop tfoot td{border-bottom:0;border-top:2px solid var(--linha);font-weight:700;background:#fbfdfe}
+.lista-prop .num small{display:block;font-weight:400}
+.prog{display:flex;gap:3px;margin:6px 0 4px}
+.prog i{width:18px;height:5px;background:var(--linha);display:block}
+.prog i.ok{background:var(--verde)}
+.aviso-linha{display:block;font-size:12px;color:var(--vermelho);font-weight:700;margin-top:4px}
+.aviso-linha.ambar{color:#8a7f00}
+.prazo{font-weight:700}.prazo.perto{color:#8a7f00}.prazo.vencida{color:var(--vermelho)}
+@media (max-width:900px){
+  .resumo-topo{grid-template-columns:repeat(2,1fr)}
+  .cards{grid-template-columns:1fr}
+  .lista-prop thead{display:none}
+  .lista-prop,.lista-prop tbody,.lista-prop tr,.lista-prop td{display:block;width:100%}
+  .lista-prop tr{border:1px solid var(--linha);margin-bottom:10px;padding:6px 4px}
+  .lista-prop td{border-bottom:0;padding:6px 10px}
+  .lista-prop td.num{text-align:left}
+  .lista-prop .acoes-linha{text-align:left}
+  .lista-prop tfoot tr{background:#fbfdfe}
+}
+
 /* ---------- login ---------- */
 .login{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
 .login .cx{background:#fff;border:1px solid var(--linha);border-top:8px solid var(--amarelo);padding:34px;width:min(400px,100%)}
@@ -241,7 +315,7 @@ table.miolo td{padding:0}
 @page{size:A4;margin:0}
 @media print{
   body{background:#fff}
-  .lateral,.topo,.painel,.toast,.nao-imprime{display:none!important}
+  .lateral,.topo,.painel,.toast,.nao-imprime,.cab,.voltar,.passo,.chips,.resumo-topo{display:none!important}
   .cliente{background:#fff}
   .principal{padding:0}
   .doc-area{background:#fff;padding:0;overflow:visible}
@@ -567,10 +641,15 @@ function porSituacao(props){
 const CFG = { SUPABASE_URL:'https://yeujqjtjqtegsnzwwazb.supabase.co', SUPABASE_ANON_KEY:'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlldWpxanRqcXRlZ3Nuend3YXpiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1NDE0OTksImV4cCI6MjEwMTExNzQ5OX0.5p1_wJ_aApJpRrN6tFu8qmAytK5FMXWt1soCubpzqao' };
 const SUPABASE_JS = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js';
 
-const APP_VERSION = '1.8.0';
+const APP_VERSION = '1.9.0';
 const LOGO_EMAIL = 'https://arteconartescontabeis-design.github.io/propostas/logo_artecon.png';
 const PORTAL_URL = 'https://arteconartescontabeis-design.github.io/portal/';
 const CHANGELOG = [
+  { v:'1.9.0', data:'22/09/2026', itens:[
+    'Tela da proposta reorganizada: cabeçalho único com número, cliente, situação, valores, validade e guarda; ações principais à vista e as demais no menu “Mais”; faixa dizendo o que falta agora; Assinaturas, Andamento, Histórico e Documento viraram abas.',
+    'Cada signatário virou um cartão, com a própria situação e as próprias ações — melhor de ler no celular do que a tabela anterior.',
+    'Lista de propostas com mais informação: cinco números no topo (em aberto, aguardando assinatura, falta o escritório, aprovadas no mês, vencendo), filtros rápidos por situação, CNPJ do cliente, valores mensal e pontual juntos, andamento das assinaturas em barras, aviso de link enviado e não aberto, validade em dias e totais no rodapé.'
+  ]},
   { v:'1.8.0', data:'22/09/2026', itens:[
     'Testemunhas: no painel Assinaturas, o botão “Adicionar testemunha” cadastra até 2 testemunhas. Cada uma recebe o próprio link, assina com nome, CPF e e-mail (sem foto), com declaração própria de testemunha, e aparece no comprovante como “Testemunha”. Quando há testemunhas, a proposta só conclui depois que elas também assinam.',
     'A mesma pessoa (CPF) não pode assinar duas vezes a mesma proposta: a testemunha não pode ser parte.',
@@ -887,8 +966,9 @@ const VIEWS = {
     <div class="painel"><div class="filtros">
       <input type="text" id="busca" placeholder="Buscar por número, cliente, contato ou CNPJ/CPF" value="${esc(S.busca)}">
       <select id="filtroStatus" style="width:200px"><option value="">Todos os status</option>${STATUS_ORDEM.map(s => `<option value="${s}" ${S.filtroStatus===s?'selected':''}>${esc(STATUS[s])}</option>`).join('')}</select>
-    </div><div id="listaPropostas"></div></div>`;
-    listarPropostas();
+    </div><div id="chipsLista" class="chips"></div><div id="listaPropostas"></div></div>`;
+    $('conteudo').querySelector('.painel').insertAdjacentHTML('beforebegin', '<div id="resumoLista"></div>');
+    listarPropostas(); carregaAlertasLista();
   },
 
   clientes(){
@@ -946,26 +1026,35 @@ const VIEWS = {
 
   documento(){
     const p = S.docPrevia || S.propostas.find(x => x.id===S.docId); if(!p) return ir('propostas');
-    const previa = !!S.docPrevia, travada = !!p.assinada_em;
-    const venc = p.validade && p.validade<hojeISO() && (p.status==='enviada'||p.status==='negociacao');
-    const etapas = [['Criada', p.criado_em], ['Enviada', p.enviada_em], ['Clientes assinaram', p.clientes_assinaram_em], ['Escritório assinou', p.escritorio_assinou_em], ['Aprovada', p.aprovada_em], ['Perdida', p.status==='perdida' ? p.perdida_em : null], [p.escritorio_assinou_em ? 'Assinada por todos' : 'Assinada pelo cliente', p.assinada_em], ['Via assinada enviada', p.via_enviada_em]].filter(x => x[1]);
-    $('conteudo').innerHTML = topo(previa ? 'Prévia do documento' : 'Proposta ' + numeroFmt(p), p.cliente_nome,
-      `<button class="btn" data-act="${previa?'voltarForm':'irPropostas'}">Voltar</button>${previa ? '' : `<button class="btn" id="btnEditar" data-act="editar" data-id="${p.id}" ${travada || p.escritorio_assinou_em || p.clientes_assinaram_em ? 'disabled title="Proposta com assinatura não pode ser alterada. Para mudar, use Duplicar."' : p.status==='aprovada'?'disabled title="Proposta aprovada fica congelada. Volte o status para editar."':''}>Editar</button><button class="btn" data-act="duplicar" data-id="${p.id}">Duplicar</button><span id="topoEnvio" style="display:contents"></span>`}<button class="btn primario" data-act="imprimir">Imprimir / salvar PDF</button>`) +
-      (previa ? '' : `<div class="painel"><h2>Controle</h2>
-        <div class="filtros" style="align-items:center;margin:0 0 10px">${selo(p.status)}${travada ? ` <span class="selo aprovada">${p.escritorio_assinou_em ? 'Assinada por todos' : 'Assinada pelo cliente'}</span>` : ''} <span>Mensal <b>${brl(p.total_mensal)}</b></span> <span>Pontual <b>${brl(p.total_pontual)}</b></span> <span>Validade <b class="${venc ? 'vencida':''}">${p.validade ? dataBR(p.validade) : '—'}</b></span></div>
-        <div class="etapas">${etapas.map(x => `<div><span>${esc(x[0])}</span><b>${esc(dataHora(x[1]))}</b></div>`).join('')}</div>
-        ${p.observacoes ? `<p style="margin:12px 0 0"><b>Anotações internas:</b> ${esc(p.observacoes)}</p>` : ''}<div id="guardaLGPD"></div></div>
-      <div class="painel"><h2>Assinaturas</h2><div id="assinaturas">Carregando…</div></div>
-      <div class="painel"><h2>Histórico</h2><ul class="linha-tempo" id="hist"><li>Carregando…</li></ul></div>`) +
-      `<div class="doc-area" id="docArea">${docHTML(p)}</div>`;
-    if(!previa) tenta(async () => {
+    const previa = !!S.docPrevia;
+    if(previa){
+      $('conteudo').innerHTML = topo('Prévia do documento', p.cliente_nome,
+        `<button class="btn" data-act="voltarForm">Voltar</button><button class="btn primario" data-act="imprimir">Imprimir / salvar PDF</button>`) +
+        `<div class="doc-area" id="docArea">${docHTML(p)}</div>`;
+      return;
+    }
+    const travada = !!p.assinada_em, aba = S.abaProp = ABAS.some(x => x[0]===S.abaProp) ? S.abaProp : (MODO_NUVEM ? 'ass' : 'doc');
+    const venc = p.validade && p.validade < hojeISO() && (p.status==='enviada' || p.status==='negociacao');
+    $('conteudo').innerHTML = cabProposta(p, venc, travada) + '<div id="passoProp"></div>' +
+      `<div class="painel painel-abas"><div class="aba">${ABAS.map(x => `<button class="${aba===x[0]?'on':''}" data-act="aba" data-aba="${x[0]}" id="aba_${x[0]}">${x[1]}</button>`).join('')}</div>
+        <div class="conteudo-aba" ${aba==='doc'?'hidden':''}>
+          <div data-painel="ass" ${aba==='ass'?'':'hidden'}><div id="assinaturas">Carregando…</div></div>
+          <div data-painel="and" ${aba==='and'?'':'hidden'}>${andamentoHTML(p)}</div>
+          <div data-painel="hist" ${aba==='hist'?'':'hidden'}><ul class="linha-tempo" id="hist"><li>Carregando…</li></ul></div>
+        </div></div>
+      <div id="opcoesDoc" class="opcoes-doc nao-imprime" ${aba==='doc'?'':'hidden'}></div>
+      <div class="doc-area" id="docArea" ${aba==='doc'?'':'hidden'}>${docHTML(p)}</div>`;
+    tenta(async () => {
       const [lt, sigs, links, ass, fila, guarda] = await Promise.all([DB.linhaDoTempo(p.id), DB.signatarios(p.id), DB.linksDe(p.id), DB.assinaturas(p.id), DB.filaDe(p.id), DB.guarda(p.id)]);
       if(S.view!=='documento' || S.docId!==p.id) return;
       S.doc = { sigs, links, ass, fila }; S.filaAtiva = fila !== null;
       $('hist').innerHTML = lt.map(linhaTempoHTML).join('') || '<li>Sem registros.</li>';
-      desenhaAssinaturas(p); desenhaTopoEnvio(p); desenhaGuarda(p, guarda);
+      desenhaAssinaturas(p); desenhaTopoEnvio(p); desenhaGuarda(p, guarda); desenhaPasso(p);
+      const falta = sigs.length + 1, feitas = ass.length;
+      if($('aba_ass')) $('aba_ass').textContent = `Assinaturas (${feitas} de ${Math.max(falta, feitas)})`;
       if(ass.length && $('btnEditar')){ $('btnEditar').disabled = true; $('btnEditar').title = 'Proposta com assinatura não pode ser alterada. Para mudar, use Duplicar.'; }
-      if(S._rolarAss){ S._rolarAss = false; const a = $('assinaturas'); if(a) a.closest('.painel').scrollIntoView({ behavior:'smooth', block:'start' }); }
+      if(S._rolarAss){ S._rolarAss = false; ACOES.aba({ dataset:{ aba:'ass' } }); window.scrollTo({ top:0, behavior:'smooth' }); }
+      if($('opcoesDoc')) $('opcoesDoc').innerHTML = ass.some(a => a.foto) ? '<label class="marcar" style="padding:8px 0"><input type="checkbox" id="incFotos" checked> Imprimir as fotos do comprovante</label>' : '';
       if(ass.length) $('docArea').innerHTML = docHTML(p, ass, { fotos:true });
     });
   },
@@ -1125,35 +1214,45 @@ function desenhaAssinaturas(p){
   if(!MODO_NUVEM){ el.innerHTML = '<p class="dica">Disponível com o app ligado ao banco. No modo local não há envio nem assinatura.</p>'; return; }
   const { sigs, links, ass } = S.doc, fim = !!p.assinada_em, diretor = S.perfil==='diretor';
   const aberta = p.status==='rascunho' || p.status==='enviada' || p.status==='negociacao';
-  const esc_ass = ass.find(a => a.papel==='escritorio'), legado = ass.filter(a => a.papel==='cliente' && !a.signatario_id);
-  const linha = s => {
+  const esc_ass = ass.find(a => a.papel==='escritorio'), legado = ass.filter(a => a.papel!=='escritorio' && !a.signatario_id);
+  const cartao = s => {
     const a = ass.find(x => x.signatario_id===s.id), lk = links.find(l => l.signatario_id===s.id && l.tipo==='assinatura'), via = links.find(l => l.signatario_id===s.id && l.tipo==='leitura');
-    let sit, ac = '';
-    if(a) sit = `<span class="selo aprovada">Assinou</span> ${esc(dataHora(a.assinado_em))} · código ${esc(a.codigo)}${a.foto_hash ? ' · foto registrada' : ''}`;
-    else if(lk) sit = `<span class="selo enviada">Enviado</span> ${canalTxt(lk.canal)} em ${esc(dataHora(lk.criado_em))}${lk.enviado_em ? '' : ' <span class="vencida">(envio não confirmado)</span>'} · ${lk.primeiro_acesso_em ? `abriu ${lk.acessos} vez${lk.acessos>1?'es':''}, a última em ${esc(dataHora(lk.ultimo_acesso_em))}` : '<b>ainda não abriu</b>'}`;
-    else sit = '<span class="selo">Não enviado</span>';
-    if(fim){ sit += via ? `<br><small>Via assinada enviada ${canalTxt(via.canal)} em ${esc(dataHora(via.criado_em))}${via.primeiro_acesso_em ? ' · já abriu' : ' · ainda não abriu'}</small>` : '<br><small class="vencida">Via assinada ainda não enviada</small>';
-      ac = `<button class="btn mini" data-act="sigEnviar" data-id="${s.id}" data-tipo="leitura" data-canal="email" ${s.email?'':'disabled title="Sem e-mail"'}>${via ? 'Reenviar via' : 'Enviar via'} por e-mail</button> <button class="btn mini" data-act="sigEnviar" data-id="${s.id}" data-tipo="leitura" data-canal="whatsapp" ${s.celular?'':'disabled title="Sem celular"'}>WhatsApp</button> <button class="btn mini" data-act="sigCopiar" data-id="${s.id}" data-tipo="leitura">Copiar link</button>`; }
-    else if(!a && aberta) ac = `<button class="btn mini" data-act="sigEnviar" data-id="${s.id}" data-tipo="assinatura" data-canal="email" ${s.email?'':'disabled title="Sem e-mail"'}>${lk ? 'Reenviar' : 'Enviar'} por e-mail</button> <button class="btn mini" data-act="sigEnviar" data-id="${s.id}" data-tipo="assinatura" data-canal="whatsapp" ${s.celular?'':'disabled title="Sem celular"'}>WhatsApp</button> <button class="btn mini" data-act="sigCopiar" data-id="${s.id}" data-tipo="assinatura">Copiar link</button>${lk ? ` <button class="btn mini" data-act="sigCancelar" data-id="${s.id}">Cancelar link</button>` : ''} <button class="btn mini" data-act="sigEditar" data-id="${s.id}">Editar</button> <button class="btn mini" data-act="sigRemover" data-id="${s.id}">Remover</button>`;
-    return `<tr><td><b>${esc(s.nome)}</b>${s.papel==='testemunha' ? ' <span class="selo">Testemunha</span>' : ''}${s.qualidade ? '<br><small>' + esc(s.qualidade) + '</small>' : ''}</td><td><small>${esc(s.email || 'sem e-mail')}<br>${esc(s.celular ? s.celular.replace(/^(\d{2})(\d{4,5})(\d{4})$/,'($1) $2-$3') : 'sem celular')}</small></td><td>${sit}</td><td class="acoes-linha">${ac}</td></tr>`; };
-  const pendEmail = sigs.filter(s => s.email && !ass.some(a => a.signatario_id===s.id) && !links.some(l => l.signatario_id===s.id && l.tipo==='assinatura'));
+    let cls = 'nada', sit, ac = '';
+    if(a){ cls = 'assinou'; sit = `<small>${esc(dataHora(a.assinado_em))} · código ${esc(a.codigo)}${a.foto_hash ? ' · foto registrada' : ''}</small>`; }
+    else if(lk){ cls = 'aguarda'; sit = `<small>${canalTxt(lk.canal)} em ${esc(dataHora(lk.criado_em))}${lk.enviado_em ? '' : ' <span class="vencida">(envio não confirmado)</span>'}</small>
+      <small>${lk.primeiro_acesso_em ? `abriu ${lk.acessos} vez${lk.acessos>1?'es':''}, a última em ${esc(dataHora(lk.ultimo_acesso_em))}` : '<b>ainda não abriu</b>'}</small>`; }
+    else sit = '<small>link ainda não enviado</small>';
+    if(fim) sit += via ? `<small>via assinada enviada ${canalTxt(via.canal)} em ${esc(dataHora(via.criado_em))}${via.primeiro_acesso_em ? ' · já abriu' : ' · ainda não abriu'}</small>`
+                      : '<small class="vencida">via assinada ainda não enviada</small>';
+    if(fim) ac = `<button class="btn mini" data-act="sigEnviar" data-id="${s.id}" data-tipo="leitura" data-canal="email" ${s.email?'':'disabled title="Sem e-mail"'}>${via ? 'Reenviar via' : 'Enviar via'}</button>
+      <button class="btn mini" data-act="sigEnviar" data-id="${s.id}" data-tipo="leitura" data-canal="whatsapp" ${s.celular?'':'disabled title="Sem celular"'}>WhatsApp</button>
+      <button class="btn mini" data-act="sigCopiar" data-id="${s.id}" data-tipo="leitura">Copiar link</button>`;
+    else if(!a && aberta) ac = `<button class="btn mini" data-act="sigEnviar" data-id="${s.id}" data-tipo="assinatura" data-canal="email" ${s.email?'':'disabled title="Sem e-mail"'}>${lk ? 'Reenviar' : 'Enviar'} por e-mail</button>
+      <button class="btn mini" data-act="sigEnviar" data-id="${s.id}" data-tipo="assinatura" data-canal="whatsapp" ${s.celular?'':'disabled title="Sem celular"'}>WhatsApp</button>
+      <button class="btn mini" data-act="sigCopiar" data-id="${s.id}" data-tipo="assinatura">Copiar link</button>
+      <span class="menu-mais"><button class="btn mini" data-act="maisLinha" title="Mais ações">⋯</button><span class="lista-mais">
+        ${lk ? `<button data-act="sigCancelar" data-id="${s.id}">Cancelar link</button>` : ''}
+        <button data-act="sigEditar" data-id="${s.id}">Editar dados</button>
+        <button data-act="sigRemover" data-id="${s.id}">Remover</button></span></span>`;
+    return `<div class="card ${cls}"><b>${esc(s.nome)} ${s.papel==='testemunha' ? '<span class="selo">Testemunha</span>' : ''} ${a ? '<span class="selo aprovada">Assinou</span>' : lk ? '<span class="selo enviada">Enviado</span>' : '<span class="selo">Não enviado</span>'}</b>
+      <small>${esc([s.qualidade, s.email || 'sem e-mail', s.celular ? fmtCel(s.celular) : ''].filter(Boolean).join(' · '))}</small>${sit}
+      ${ac ? `<div class="acs">${ac}</div>` : ''}</div>`; };
+  const cartaoEsc = () => `<div class="card ${esc_ass ? 'assinou' : 'nada'}"><b>${esc(S.tenant.nome)} ${esc_ass ? '<span class="selo aprovada">Assinou</span>' : legado.length && fim ? '<span class="selo">Não se aplica</span>' : '<span class="selo negociacao">Pendente</span>'}</b>
+    <small>Escritório · assinatura obrigatória</small>
+    ${esc_ass ? `<small>${esc(esc_ass.nome)} · ${esc(dataHora(esc_ass.assinado_em))} · código ${esc(esc_ass.codigo)}</small>`
+              : legado.length && fim ? '<small>proposta fechada na v1.3</small>' : '<small>pode assinar antes ou depois do cliente</small>'}
+    ${!esc_ass && !fim && aberta ? `<div class="acs">${diretor ? '<button class="btn mini primario" data-act="escAssinar">Assinar pelo escritório</button>' : '<small>só o diretor assina</small>'}</div>` : ''}</div>`;
+  const cartaoLegado = a => `<div class="card assinou"><b>${esc(a.nome)} <span class="selo aprovada">Assinou</span></b><small>${esc(a.cargo || '')} ${esc(a.email || '')}</small>
+    <small>${esc(dataHora(a.assinado_em))} · código ${esc(a.codigo)} · link único da v1.3</small></div>`;
   let h = '';
   if(!aberta && !fim) h += `<p class="dica" style="margin:0 0 10px">Proposta ${esc(STATUS[p.status])} não recebe assinaturas. <button class="btn mini" data-act="reabrir">Reabrir como Enviada</button></p>`;
-  h += `<div class="rolagem"><table class="lista"><thead><tr><th>Quem assina</th><th>Contato</th><th>Situação</th><th></th></tr></thead><tbody>
-    ${sigs.map(linha).join('')}
-    ${legado.map(a => `<tr><td><b>${esc(a.nome)}</b><br><small>${esc(a.cargo||'')}</small></td><td><small>${esc(a.email||'')}</small></td><td><span class="selo aprovada">Assinou</span> ${esc(dataHora(a.assinado_em))} · código ${esc(a.codigo)} <small>(link único da v1.3)</small></td><td></td></tr>`).join('')}
-    ${!sigs.filter(s => s.papel!=='testemunha').length && !legado.length ? '<tr><td colspan="4" class="vazio">Cadastre quem vai assinar pelo cliente. Cada pessoa recebe o próprio link.</td></tr>' : ''}
-    <tr><td><b>${esc(S.tenant.nome)}</b><br><small>Escritório — assinatura obrigatória</small></td><td><small>${esc(esc_ass ? esc_ass.email : 'diretor logado')}</small></td>
-      <td>${esc_ass ? `<span class="selo aprovada">Assinou</span> ${esc(dataHora(esc_ass.assinado_em))} · ${esc(esc_ass.nome)} · código ${esc(esc_ass.codigo)}` : legado.length && fim ? '<span class="selo">Não se aplica</span> <small>proposta fechada na v1.3</small>' : '<span class="selo negociacao">Pendente</span> pode assinar antes ou depois dos clientes'}</td>
-      <td class="acoes-linha">${!esc_ass && !fim && aberta ? (diretor ? '<button class="btn mini primario" data-act="escAssinar">Assinar pelo escritório</button>' : '<small>só o diretor assina</small>') : ''}</td></tr></tbody></table></div>
+  h += `<div class="cards">${sigs.map(cartao).join('')}${legado.map(cartaoLegado).join('')}${cartaoEsc()}</div>
+    ${!sigs.filter(s => s.papel!=='testemunha').length && !legado.length ? '<div class="vazio" style="margin-top:12px">Cadastre quem vai assinar pelo cliente. Cada pessoa recebe o próprio link.</div>' : ''}
     <div class="filtros" style="margin:14px 0 0;align-items:center">
       ${!fim && aberta ? `<button class="btn" data-act="sigEditar">Adicionar signatário</button>${sigs.filter(s => s.papel==='testemunha').length < 2 ? `<button class="btn" data-act="sigEditar" data-papel="testemunha">Adicionar testemunha (${sigs.filter(s => s.papel==='testemunha').length} de 2)</button>` : ''}` : ''}
-      <button class="btn" data-act="copiarLink" title="Abre o app inteiro e pede login: só para quem é do escritório">Copiar link interno</button>
-      ${ass.some(a => a.foto) ? '<label class="marcar" style="padding:0"><input type="checkbox" id="incFotos" checked> Imprimir as fotos no comprovante</label>' : ''}
     </div>
-    ${filaHTML(p)}
-    ${p.exige_foto && !fim ? '<p class="dica" style="margin:10px 0 0">Esta proposta exige foto com documento na assinatura do cliente.</p>' : ''}
-    ${!diretor && ass.length ? '<p class="dica" style="margin:10px 0 0">CPF, IP e fotos dos signatários aparecem completos só para o diretor.</p>' : ''}`;
+    <p class="dica" style="margin:10px 0 0">${[p.exige_foto && !fim ? 'Exige foto com documento na assinatura do cliente' : '', !diretor && ass.length ? 'CPF, IP e fotos aparecem completos só para o diretor' : ''].filter(Boolean).join(' · ')}</p>
+    ${filaHTML(p)}`;
   el.innerHTML = h;
 }
 const ROT_FILA = { via_assinada:'Via assinada', recibo_assinatura:'Recibo da assinatura', aviso_abertura:'Aviso: cliente abriu', aviso_assinatura:'Aviso: nova assinatura', aviso_conclusao:'Aviso: todos assinaram' };
@@ -1169,9 +1268,66 @@ const ICO_MAIL = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="t
 const ICO_ZAP = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" style="vertical-align:-3px;margin-right:4px"><path d="M12 3a9 9 0 0 0-7.8 13.5L3 21l4.6-1.2A9 9 0 1 0 12 3z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M9 8.5c.3 2.7 2.8 5.3 5.5 5.9l1.2-1.3-1.9-1-.9.8c-.9-.4-1.9-1.4-2.3-2.3l.8-.9-1-1.9z" fill="currentColor"/></svg>';
 const ICO_LINK = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" style="vertical-align:-3px;margin-right:4px"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
 function fmtCel(c){ return String(c||'').replace(/^(\d{2})(\d{4,5})(\d{4})$/,'($1) $2-$3'); }
+const ABAS = [['ass','Assinaturas'],['and','Andamento'],['hist','Histórico'],['doc','Documento']];
+function cabProposta(p, venc, travada){
+  const fim = !!p.assinada_em;
+  return `<button class="voltar" data-act="irPropostas">← Propostas</button>
+  <div class="cab"><div class="cab-l1"><h1>Proposta ${esc(numeroFmt(p))}</h1>${selo(p.status)}${travada ? ` <span class="selo aprovada">${p.escritorio_assinou_em ? 'Assinada por todos' : 'Assinada pelo cliente'}</span>` : ''}
+      <span class="cli">· ${esc(p.cliente_nome)}${p.cliente_documento ? ' · ' + esc(docFmt(p.cliente_documento)) : ''}</span></div>
+    <div class="cab-l2">
+      <div><span>Honorário mensal</span><b>${brl(p.total_mensal)}</b></div>
+      <div><span>Serviços pontuais</span><b>${+p.total_pontual ? brl(p.total_pontual) : '—'}</b></div>
+      <div><span>Validade</span><b class="${venc ? 'vencida' : ''}">${p.validade ? dataBR(p.validade) : '—'}</b></div>
+      <div id="guardaCab"></div></div>
+    <div class="acoes"><span id="topoEnvio" style="display:contents"></span>
+      <button class="btn" data-act="imprimir">Imprimir / salvar PDF</button>
+      <span class="menu-mais"><button class="btn" data-act="maisLinha">Mais ▾</button><span class="lista-mais">
+        <button id="btnEditar" data-act="editar" data-id="${p.id}" ${travada || p.escritorio_assinou_em || p.clientes_assinaram_em ? 'disabled title="Proposta com assinatura não pode ser alterada. Para mudar, use Duplicar."' : p.status==='aprovada' ? 'disabled title="Proposta aprovada fica congelada. Volte o status para editar."' : ''}>Editar</button>
+        <button data-act="duplicar" data-id="${p.id}">Duplicar</button>
+        <button data-act="copiarLink">Copiar link interno</button>
+        <button data-act="atividades" data-id="${p.id}">Ver atividades</button>
+        ${S.perfil==='diretor' && MODO_NUVEM ? '<button data-act="dlgGuarda">Estender guarda (LGPD)</button>' : ''}
+        ${fim ? '' : `<button data-act="excluirProposta" data-id="${p.id}">Excluir</button>`}</span></span></div></div>`;
+}
+function andamentoHTML(p){
+  const et = [['Criada', p.criado_em], ['Enviada', p.enviada_em], ['Cliente assina', p.clientes_assinaram_em], ['Escritório assina', p.escritorio_assinou_em], ['Via enviada', p.via_enviada_em]];
+  const i = et.findIndex(x => !x[1]);
+  const detalhe = [['Criada', p.criado_em], ['Enviada', p.enviada_em], ['Clientes assinaram', p.clientes_assinaram_em], ['Escritório assinou', p.escritorio_assinou_em],
+    ['Aprovada', p.aprovada_em], ['Perdida', p.status==='perdida' ? p.perdida_em : null], ['Assinada por todos', p.assinada_em], ['Via assinada enviada', p.via_enviada_em]].filter(x => x[1]);
+  return `<div class="trilha">${et.map((x, k) => `<div class="et ${x[1] ? 'feito' : k===i ? 'atual' : ''}"><i></i><b>${esc(x[0])}</b><span>${x[1] ? esc(dataHora(x[1])) : k===i ? 'pendente' : '—'}</span></div>`).join('')}</div>
+    <div class="etapas" style="margin-top:16px">${detalhe.map(x => `<div><span>${esc(x[0])}</span><b>${esc(dataHora(x[1]))}</b></div>`).join('')}</div>
+    <div class="filtros" style="align-items:center;margin:14px 0 0"><span class="dica">Situação:</span>
+      <select data-status="${p.id}" ${p.assinada_em ? 'disabled title="Proposta assinada"' : ''} aria-label="Situação da proposta">${STATUS_ORDEM.map(s => `<option value="${s}" ${p.status===s?'selected':''}>${esc(STATUS[s])}</option>`).join('')}</select>
+      <span class="dica">Validade: <b>${p.validade ? esc(dataBR(p.validade)) : '—'}</b></span></div>
+    <div id="guardaLGPD"></div>
+    ${p.observacoes ? `<p style="margin:12px 0 0"><b>Anotações internas:</b> ${esc(p.observacoes)}</p>` : ''}`;
+}
+function desenhaPasso(p){
+  const el = $('passoProp'); if(!el || !S.doc) return;
+  const { sigs, ass } = S.doc, fim = !!p.assinada_em, aberta = ['rascunho','enviada','negociacao'].includes(p.status);
+  const pend = sigs.filter(s => !ass.some(a => a.signatario_id===s.id)), escPend = !ass.some(a => a.papel==='escritorio');
+  const na = (S.naoAbertos || []).filter(x => x.proposta_id===p.id);
+  let cls = 'passo', ico = '⏳', txt, sub = '', botao = '';
+  if(fim && !p.via_enviada_em){ cls += ''; txt = 'Assinada por todos. Falta enviar a via assinada aos signatários.'; sub = 'O envio automático tenta de novo sozinho; se preferir, envie agora.'; botao = '<button class="btn primario" data-act="topoEmail">Enviar a via</button>'; }
+  else if(fim){ cls += ' ok'; ico = '✓'; txt = `Assinada por todos em ${dataHora(p.assinada_em)} e enviada aos signatários.`; sub = 'Nada pendente. O conteúdo está travado; para mudar algo, duplique a proposta.'; }
+  else if(p.status==='perdida'){ cls += ' cinza'; ico = '—'; txt = 'Proposta marcada como perdida.'; sub = 'Para retomar, reabra como Enviada na aba Andamento.'; }
+  else if(!aberta){ cls += ' cinza'; ico = '—'; txt = `Proposta ${STATUS[p.status]} não recebe assinaturas.`; botao = '<button class="btn" data-act="reabrir">Reabrir como Enviada</button>'; }
+  else if(!sigs.length){ txt = 'Cadastre quem vai assinar pelo cliente.'; sub = 'Cada pessoa recebe o próprio link de assinatura.'; botao = '<button class="btn primario" data-act="sigEditar">Adicionar signatário</button>'; }
+  else {
+    const nomes = [...pend.map(s => s.nome), ...(escPend ? ['o escritório'] : [])];
+    txt = nomes.length ? `Falta a assinatura de ${nomes.join(', ').replace(/, ([^,]*)$/, ' e $1')}.` : 'Todos assinaram; concluindo…';
+    sub = na.length ? `O link de ${esc(na[0].nome)} foi enviado e ainda não foi aberto — confira o contato ou reenvie.`
+        : pend.length ? 'Envie ou reenvie o link para quem falta.' : 'Assine pelo escritório para concluir.';
+    botao = pend.length ? '<button class="btn primario" data-act="topoEmail">Enviar por e-mail</button>'
+          : (escPend && S.perfil==='diretor' ? '<button class="btn primario" data-act="escAssinar">Assinar pelo escritório</button>' : '');
+  }
+  el.innerHTML = `<div class="${cls}"><span class="ico-passo">${ico}</span><span><b>${esc(txt)}</b>${sub ? `<span class="dica">${sub}</span>` : ''}</span>${botao}</div>`;
+}
 function canalTxt(c){ return c==='whatsapp' ? 'por WhatsApp' : c==='link' ? 'por link copiado' : 'por e-mail'; }
 function desenhaGuarda(p, g){
-  const el = $('guardaLGPD'); if(!el || !g || !g.guarda_ate) return;
+  const el = $('guardaLGPD'); if(!g || !g.guarda_ate) return;
+  if($('guardaCab')) $('guardaCab').innerHTML = `<span>Guarda (LGPD)</span><b>até ${esc(dataBR(g.guarda_ate))}${g.reter_ate ? ' (estendida)' : ''}</b>`;
+  if(!el) return;
   el.innerHTML = `<p class="dica" style="margin:10px 0 0">Guarda (LGPD) até <b>${esc(dataBR(g.guarda_ate))}</b>${g.reter_ate ? ` — <b>estendida</b> por ${esc(g.motivo || '')}` : ` — ${esc(String(g.anos))} anos da última movimentação`}. Depois disso a proposta e os dados pessoais ligados a ela são eliminados.
     ${S.perfil==='diretor' ? `<button class="btn mini" data-act="dlgGuarda" style="margin-left:6px">${g.reter_ate ? 'Alterar guarda' : 'Estender guarda'}</button>` : ''}</p>`;
   S.guardaAtual = g;
@@ -1228,21 +1384,84 @@ async function enviarViaATodos(p, silencioso){
 }
 
 /* ----- lista de propostas ----- *//* ----- lista de propostas ----- */
+function faseProp(p){
+  if(p.status==='perdida') return { txt:'perdida' + (p.perdida_em ? ' em ' + dataBR(String(p.perdida_em).slice(0,10)) : ''), barras:[0,0,0] };
+  if(p.assinada_em) return { txt:'assinada por todos' + (p.via_enviada_em ? ' · via enviada' : ' · via ainda não enviada'), barras:[1,1,1] };
+  if(!p.enviada_em) return { txt:'ainda não enviada', barras:[0,0,0] };
+  const b = [1, p.clientes_assinaram_em ? 1 : 0, p.escritorio_assinou_em ? 1 : 0];
+  return { txt:p.clientes_assinaram_em ? 'cliente assinou · falta o escritório' : p.escritorio_assinou_em ? 'escritório assinou · falta o cliente' : 'enviada · aguardando o cliente', barras:b };
+}
+function diasPara(iso){ return Math.round((new Date(iso + 'T12:00:00') - new Date(hojeISO() + 'T12:00:00')) / 864e5); }
+function prazoTxt(p){
+  if(!p.validade || p.assinada_em || p.status==='perdida' || p.status==='aprovada') return ['—',''];
+  const d = diasPara(p.validade);
+  if(d < 0) return ['venceu em ' + dataBR(p.validade), 'vencida'];
+  if(d === 0) return ['vence hoje', 'vencida'];
+  return ['vence em ' + d + ' dia' + (d>1?'s':''), d <= 7 ? 'perto' : ''];
+}
 function tabelaPropostas(arr, compacta){
   if(!arr.length) return `<div class="vazio">${S.propostas.length ? 'Nenhuma proposta encontrada com este filtro.' : 'Nenhuma proposta ainda. Crie a primeira em “Nova proposta”.'}</div>`;
-  const hoje = hojeISO();
-  return `<div class="rolagem"><table class="lista"><thead><tr><th>Nº</th><th>Cliente</th><th class="num">Mensal</th><th class="num">Pontual</th><th>Status</th>${compacta ? '' : '<th>Controle</th><th>Validade</th>'}<th></th></tr></thead><tbody>${arr.map(p => {
-    const venc = p.validade && p.validade < hoje && (p.status==='enviada' || p.status==='negociacao');
-    return `<tr><td>${esc(numeroFmt(p))}</td><td><b>${esc(p.cliente_nome)}</b><br><small>${esc(p.contato || 'sem contato')}</small></td><td class="num">${+p.total_mensal ? brl(p.total_mensal) : '—'}</td><td class="num">${+p.total_pontual ? brl(p.total_pontual) : '—'}</td>
-    <td>${compacta ? selo(p.status) : `<select data-status="${p.id}" ${p.assinada_em ? 'disabled title="Assinada pelo cliente"' : ''} aria-label="Status da proposta ${esc(numeroFmt(p))}">${STATUS_ORDEM.map(s => `<option value="${s}" ${p.status===s?'selected':''}>${esc(STATUS[s])}</option>`).join('')}</select>`}</td>
-    ${compacta ? '' : `<td><div class="ctrl"><button class="ico" data-act="atividades" data-id="${p.id}" title="Ver todas as atividades desta proposta" aria-label="Ver todas as atividades da proposta ${esc(numeroFmt(p))}">${ICO_RELOGIO}</button><span><small>Criada ${esc(dataHora(p.criado_em) || dataBR(p.data_proposta))}</small>${etapaAtual(p) ? '<br>' + esc(etapaAtual(p)[0]) + ' ' + esc(dataHora(etapaAtual(p)[1])) : ''}</span></div></td><td class="${venc?'vencida':''}">${p.validade ? dataBR(p.validade) + (venc ? ' (vencida)' : '') : '—'}</td>`}
-    <td class="acoes-linha"><button class="btn mini" data-act="doc" data-id="${p.id}">Documento</button>${compacta || !MODO_NUVEM ? '' : ` <button class="btn mini" data-act="docAss" data-id="${p.id}" title="Quem assina e envio por e-mail/WhatsApp">Assinaturas</button>`}${compacta ? '' : ` <button class="btn mini" data-act="editar" data-id="${p.id}" ${p.assinada_em || p.escritorio_assinou_em || p.clientes_assinaram_em || p.status==='aprovada'?'disabled title="Proposta aprovada ou com assinatura não pode ser alterada. Para mudar, use Duplicar."':''}>Editar</button> <button class="btn mini" data-act="duplicar" data-id="${p.id}">Duplicar</button> <button class="btn mini" data-act="excluirProposta" data-id="${p.id}" ${p.assinada_em ? 'disabled title="Proposta assinada pelo cliente não pode ser excluída."' : ''}>Excluir</button>`}</td></tr>`; }).join('')}</tbody></table></div>`;
+  if(compacta) return `<div class="rolagem"><table class="lista"><thead><tr><th>Nº</th><th>Cliente</th><th class="num">Mensal</th><th class="num">Pontual</th><th>Status</th><th></th></tr></thead><tbody>${arr.map(p =>
+    `<tr><td>${esc(numeroFmt(p))}</td><td><b>${esc(p.cliente_nome)}</b><br><small>${esc(p.contato || 'sem contato')}</small></td><td class="num">${+p.total_mensal ? brl(p.total_mensal) : '—'}</td><td class="num">${+p.total_pontual ? brl(p.total_pontual) : '—'}</td><td>${selo(p.status)}</td>
+    <td class="acoes-linha"><button class="btn mini" data-act="doc" data-id="${p.id}">Abrir</button></td></tr>`).join('')}</tbody></table></div>`;
+  const tot = arr.reduce((a, p) => ({ m:a.m + (+p.total_mensal||0), q:a.q + (+p.total_pontual||0),
+    ap:a.ap + (p.status==='aprovada' ? (+p.total_mensal||0) : 0), ab:a.ab + (['enviada','negociacao','rascunho'].includes(p.status) ? (+p.total_mensal||0) : 0) }), { m:0, q:0, ap:0, ab:0 });
+  return `<div class="rolagem"><table class="lista lista-prop"><thead><tr><th>Nº</th><th>Cliente</th><th class="num">Valores</th><th>Situação e assinaturas</th><th>Validade</th><th></th></tr></thead><tbody>${arr.map(p => {
+    const f = faseProp(p), [pz, pzc] = prazoTxt(p), na = (S.naoAbertos || []).filter(x => x.proposta_id===p.id);
+    return `<tr><td><b>${esc(numeroFmt(p))}</b><br><small class="dica">criada ${esc(dataBR(String(p.criado_em || '').slice(0,10)) || dataBR(p.data_proposta))}</small></td>
+    <td><b>${esc(p.cliente_nome)}</b><br><small class="dica">${esc(docFmt(p.cliente_documento) || p.contato || 'sem CNPJ/CPF')}</small></td>
+    <td class="num">${+p.total_mensal ? brl(p.total_mensal) + '<small class="dica">por mês</small>' : '—'}${+p.total_pontual ? `<small class="dica">+ ${brl(p.total_pontual)} pontual</small>` : ''}</td>
+    <td>${selo(p.status)}${p.assinada_em ? ' <span class="selo aprovada">Assinada por todos</span>' : ''}
+      <div class="prog">${f.barras.map(x => `<i class="${x ? 'ok' : ''}"></i>`).join('')}</div>
+      <small class="dica">${esc(f.txt)}</small>
+      ${na.length ? `<div class="aviso-linha">● link ${na.length>1 ? 'de ' + na.length + ' pessoas' : 'de ' + esc(na[0].nome)} não aberto há ${diasPara(String(na[0].criado_em).slice(0,10)) * -1} dias</div>` : ''}
+      ${!p.assinada_em && p.clientes_assinaram_em && !p.escritorio_assinou_em ? '<div class="aviso-linha ambar">● falta a assinatura do escritório</div>' : ''}
+      ${p.assinada_em && !p.via_enviada_em ? '<div class="aviso-linha ambar">● via assinada ainda não enviada</div>' : ''}</td>
+    <td><span class="prazo ${pzc}">${esc(pz)}</span></td>
+    <td class="acoes-linha"><button class="ico" data-act="atividades" data-id="${p.id}" title="Ver todas as atividades desta proposta" aria-label="Ver atividades da proposta ${esc(numeroFmt(p))}">${ICO_RELOGIO}</button>
+      <button class="btn mini" data-act="doc" data-id="${p.id}">Abrir</button>${MODO_NUVEM ? ` <button class="btn mini" data-act="docAss" data-id="${p.id}" title="Quem assina e envio">Assinaturas</button>` : ''}
+      <span class="menu-mais"><button class="btn mini" data-act="maisLinha" title="Mais ações">⋯</button><span class="lista-mais">
+        <button data-act="editar" data-id="${p.id}" ${p.assinada_em || p.escritorio_assinou_em || p.clientes_assinaram_em || p.status==='aprovada' ? 'disabled title="Proposta aprovada ou com assinatura não pode ser alterada. Para mudar, use Duplicar."' : ''}>Editar</button>
+        <button data-act="duplicar" data-id="${p.id}">Duplicar</button>
+        <button data-act="statusDlg" data-id="${p.id}" ${p.assinada_em ? 'disabled title="Proposta assinada"' : ''}>Mudar situação</button>
+        <button data-act="excluirProposta" data-id="${p.id}">Excluir</button></span></span></td></tr>`; }).join('')}</tbody>
+    <tfoot><tr><td colspan="2">${arr.length} proposta${arr.length>1?'s':''} nesta lista</td><td class="num">${brl(tot.m)}<small class="dica">por mês</small>${tot.q ? `<small class="dica">+ ${brl(tot.q)} pontual</small>` : ''}</td>
+      <td colspan="3"><small class="dica">Aprovadas: ${brl(tot.ap)}/mês · Em aberto: ${brl(tot.ab)}/mês</small></td></tr></tfoot></table></div>`;
+}
+const CHIPS = [
+  ['todas',   'Todas',              () => true],
+  ['acao',    'Precisam de ação',   p => p.status==='rascunho' || (!p.assinada_em && p.clientes_assinaram_em && !p.escritorio_assinou_em) || (p.assinada_em && !p.via_enviada_em) || (['enviada','negociacao'].includes(p.status) && p.validade && diasPara(p.validade) < 0)],
+  ['cliente', 'Aguardando cliente', p => ['enviada','negociacao'].includes(p.status) && !!p.enviada_em && !p.clientes_assinaram_em],
+  ['esc',     'Falta o escritório', p => ['enviada','negociacao'].includes(p.status) && !p.escritorio_assinou_em && !!p.enviada_em],
+  ['vence',   'Vencendo',           p => ['enviada','negociacao'].includes(p.status) && p.validade && diasPara(p.validade) <= 7],
+  ['ass',     'Assinadas',          p => !!p.assinada_em],
+  ['rasc',    'Rascunhos',          p => p.status==='rascunho'] ];
+function resumoLista(){
+  const at = ativos(S.propostas), mes = hojeISO().slice(0,7), soma = f => brl(at.filter(f).reduce((a,p) => a + (+p.total_mensal||0), 0));
+  const cnt = k => at.filter(CHIPS.find(c => c[0]===k)[2]).length;
+  const abertas = p => ['enviada','negociacao'].includes(p.status), aprov = p => p.status==='aprovada' && String(p.aprovada_em || p.assinada_em || '').slice(0,7)===mes;
+  const semAbrir = (S.naoAbertos || []).length;
+  const card = (k, rot, val, sub) => `<div class="ind clic" role="button" tabindex="0" data-act="chip" data-chip="${k}" title="Ver estas propostas"><div class="rot">${rot}</div><b>${val}</b><div class="rot">${sub}</div></div>`;
+  return `<div class="resumo-topo">
+    ${card('cliente','Em aberto', at.filter(abertas).length, soma(abertas) + '/mês')}
+    ${card('cliente','Aguardando assinatura', cnt('cliente'), semAbrir ? semAbrir + ' sem abrir o link' : 'links entregues')}
+    ${card('esc','Falta o escritório', cnt('esc'), cnt('esc') ? 'assinar' : 'nada pendente')}
+    ${card('ass','Aprovadas no mês', at.filter(aprov).length, soma(aprov) + '/mês')}
+    ${card('vence','Vencendo em 7 dias', cnt('vence'), 'validade curta')}</div>`;
 }
 function listarPropostas(){
-  const q = S.busca.trim().toLowerCase(), qd = soDoc(q);
-  const arr = propostasOrdenadas().filter(p => (!S.filtroStatus || p.status===S.filtroStatus) && (!S.filtroExtra || S.filtroExtra.fn(p)) &&
+  const q = S.busca.trim().toLowerCase(), qd = soDoc(q), chip = CHIPS.find(c => c[0]===(S.chip || 'todas'));
+  const base = propostasOrdenadas();
+  const arr = base.filter(p => (!S.filtroStatus || p.status===S.filtroStatus) && (!S.filtroExtra || S.filtroExtra.fn(p)) && (S.chip ? chip[2](p) : true) &&
     (!q || p.cliente_nome.toLowerCase().includes(q) || String(p.contato||'').toLowerCase().includes(q) || numeroFmt(p).includes(q) || (qd.length>=3 && /^\d/.test(qd) && String(p.cliente_documento||'').includes(qd))));
-  $('listaPropostas').innerHTML = (S.filtroExtra ? `<div class="chip">Filtro do painel: <b>${esc(S.filtroExtra.rotulo)}</b> — ${arr.length} proposta${arr.length===1?'':'s'} <button class="btn mini" data-act="limparExtra">Limpar filtro</button></div>` : '') + tabelaPropostas(arr, false);
+  if($('resumoLista')) $('resumoLista').innerHTML = resumoLista();
+  if($('chipsLista')) $('chipsLista').innerHTML = CHIPS.map(c => { const n = base.filter(c[2]).length;
+    return `<button class="chip ${((S.chip||'todas')===c[0]) ? 'on' : ''} ${c[0]==='acao' && n ? 'alerta' : ''}" data-act="chip" data-chip="${c[0]}" ${n || c[0]==='todas' ? '' : 'disabled'}>${esc(c[1])} <b>${n}</b></button>`; }).join('');
+  $('listaPropostas').innerHTML = (S.filtroExtra ? `<div class="chip-aviso">Filtro do painel: <b>${esc(S.filtroExtra.rotulo)}</b> — ${arr.length} proposta${arr.length===1?'':'s'} <button class="btn mini" data-act="limparExtra">Limpar filtro</button></div>` : '') + tabelaPropostas(arr, false);
+}
+async function carregaAlertasLista(){
+  if(!MODO_NUVEM) return; const l = await DB.naoAbertos().catch(() => []);
+  S.naoAbertos = l; if(S.view==='propostas' && $('listaPropostas')) listarPropostas();
 }
 
 /* ----- formulário ----- */
@@ -1431,13 +1650,13 @@ const ACOES = {
   doc(el){ if($('dlg').open) $('dlg').close(); S.docPrevia = null; S.docId = el.dataset.id; ir('documento'); },
   docAss(el){ S._rolarAss = true; ACOES.doc(el); },
   atividades(el){ dlgAtividades(el.dataset.id); },
-  filtrar(el){ S.filtroStatus = el.dataset.status; S.filtroExtra = null; S.busca = ''; ir('propostas'); },
+  filtrar(el){ S.filtroStatus = el.dataset.status; S.filtroExtra = null; S.chip = ''; S.busca = ''; ir('propostas'); },
   feedTudo(){ S.feedTudo = true; desenhaOps15(); },
   opsFiltrar(el){ const f = { dia:null, classe:null, ...(S.opsFiltro || {}) };      // coluna = dia; legenda = tipo; os dois se combinam
     if(el.dataset.dia) f.dia = f.dia===el.dataset.dia ? null : el.dataset.dia; else f.classe = f.classe===el.dataset.classe ? null : el.dataset.classe;
     S.opsFiltro = f.dia || f.classe ? f : null; desenhaOps15(); const c = document.querySelector('#ops15 .chip'); if(c) c.scrollIntoView({ block:'nearest', behavior:'smooth' }); },
   opsLimpar(){ S.opsFiltro = null; desenhaOps15(); },
-  filtroRapido(el){ const mes = hojeISO().slice(0,7), F = {
+  filtroRapido(el){ S.chip = ''; const mes = hojeISO().slice(0,7), F = {
       mes:      { rotulo:'criadas em ' + MESES[+mes.slice(5)-1] + ' de ' + mes.slice(0,4), fn:p => String(p.data_proposta).slice(0,7)===mes },
       abertas:  { rotulo:'em aberto (Enviada ou Em negociação)', fn:p => p.status==='enviada' || p.status==='negociacao' },
       decididas:{ rotulo:'decididas (Aprovada ou Perdida)', fn:p => p.status==='aprovada' || p.status==='perdida' },
@@ -1447,7 +1666,7 @@ const ACOES = {
   irPropostas(){ ir('propostas'); },
   previa(){ const F = leF(); const er = validarProposta(F); if(er.length){ toast(er[0], true); return; } S.docPrevia = JSON.parse(JSON.stringify(F)); ir('documento'); },
   voltarForm(){ S.docPrevia = null; ir('form'); },
-  imprimir(){ window.print(); },
+  imprimir(){ if(S.view==='documento' && !S.docPrevia && S.abaProp!=='doc') ACOES.aba({ dataset:{ aba:'doc' } }); setTimeout(() => window.print(), 60); },
   async reabrir(){ const p = S.propostas.find(x => x.id===S.docId); if(!p) return;
     if(!confirm(`Voltar a proposta ${numeroFmt(p)} de ${STATUS[p.status]} para Enviada? A mudança fica registrada no histórico.`)) return;
     await tenta(async () => { await DB.alterar('propostas', p.id, { status:'enviada' }); toast('Proposta reaberta como Enviada.'); VIEWS.documento(); }); },
@@ -1533,6 +1752,21 @@ const ACOES = {
   async viaTodos(){ const p = S.propostas.find(x => x.id===S.docId); if(!p) return; await tenta(async () => { await enviarViaATodos(p); await DB.recarregar(p.id); }); VIEWS.documento(); },
   async filaAgora(){ await tenta(async () => { const r = await DB.filaDisparar(); toast(/^disparado/.test(r) ? 'Fila acionada. Atualizando em instantes…' : 'Não foi possível acionar: ' + r, !/^disparado/.test(r)); setTimeout(() => { if(S.view==='documento') VIEWS.documento(); }, 4000); }); },
   escAssinar(){ dlgEscritorio(); },
+  aba(el){ const k = S.abaProp = el.dataset.aba;
+    document.querySelectorAll('.painel-abas .aba button').forEach(b => b.classList.toggle('on', b.dataset.aba===k));
+    document.querySelectorAll('.painel-abas [data-painel]').forEach(d => d.hidden = d.dataset.painel !== k);
+    const c = document.querySelector('.painel-abas .conteudo-aba'); if(c) c.hidden = k==='doc';
+    if($('docArea')) $('docArea').hidden = k!=='doc';
+    if($('opcoesDoc')) $('opcoesDoc').hidden = k!=='doc'; },
+  maisLinha(el){ const m = el.closest('.menu-mais'), abrir = !m.classList.contains('aberto');
+    document.querySelectorAll('.menu-mais').forEach(x => x.classList.remove('aberto')); if(abrir) m.classList.add('aberto'); },
+  statusDlg(el){ const p = S.propostas.find(x => x.id===el.dataset.id); if(!p) return;
+    $('dlg').innerHTML = `<h2>Situação da proposta ${esc(numeroFmt(p))}</h2><p style="margin-top:-6px">${esc(p.cliente_nome)}</p>
+      <div class="campo"><label for="s_status">Situação</label><select id="s_status" data-status="${p.id}">${STATUS_ORDEM.map(s => `<option value="${s}" ${p.status===s?'selected':''}>${esc(STATUS[s])}</option>`).join('')}</select></div>
+      <p class="dica">Mudar a situação aqui não envia nada ao cliente. Para enviar, abra a proposta e use os botões de envio.</p>
+      <div class="barra-salvar" style="margin-top:14px"><button class="btn" data-act="fecharDlg">Fechar</button></div>`;
+    $('dlg').showModal(); },
+  chip(el){ S.chip = el.dataset.chip==='todas' ? '' : el.dataset.chip; S.filtroExtra = null; if(S.view!=='propostas') return ir('propostas'); listarPropostas(); },
   dlgGuarda(){ dlgGuarda(); },
   async guardaSalvar(){ const ate = $('r_ate').value, mot = $('r_mot').value.trim();
     if(!ate){ toast('Informe até quando manter.', true); return; } if(mot.length < 5){ toast('Informe o motivo.', true); return; }
@@ -1592,6 +1826,7 @@ document.addEventListener('click', ev => {
   const n = ev.target.closest('[data-ir]'); if(n){ if(n.dataset.ir==='propostas'){ S.filtroExtra = null; } ir(n.dataset.ir); return; }
   const a = ev.target.closest('[data-act]'); if(a && !a.disabled && ACOES[a.dataset.act]){ ev.preventDefault(); ACOES[a.dataset.act](a); }
 });
+document.addEventListener('click', ev => { if(!ev.target.closest('.menu-mais')) document.querySelectorAll('.menu-mais').forEach(x => x.classList.remove('aberto')); }, true);
 document.addEventListener('keydown', ev => {
   if(ev.key!=='Enter' && ev.key!==' ') return; const a = ev.target.closest && ev.target.closest('[data-act][tabindex]'); if(!a || a.tagName==='BUTTON') return;
   ev.preventDefault(); if(ACOES[a.dataset.act]) ACOES[a.dataset.act](a);
