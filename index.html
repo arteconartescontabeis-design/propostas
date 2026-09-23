@@ -209,6 +209,8 @@ dialog .linha-tempo{max-height:60vh;overflow:auto}
 .passo .ico-passo{font-size:20px}
 .passo b{display:block}.passo .dica{display:block}
 .passo .btn{margin-left:auto;flex:none}
+.passo>span:nth-child(2){flex:1;min-width:0}
+@media (max-width:700px){.passo{flex-wrap:wrap}.passo .btn{margin-left:0;flex-basis:100%}}
 .painel-abas{padding:0}
 .painel-abas .aba{display:flex;gap:2px;border-bottom:2px solid var(--linha);padding:0 8px;flex-wrap:wrap}
 .painel-abas .aba button{border:0;background:none;padding:12px 16px;font:inherit;font-weight:700;color:var(--suave);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px}
@@ -480,7 +482,7 @@ function clausulas(p, esc_){
     if(fixo>0) v.push({ texto:`O valor dos honorários para ${p.assunto || 'a prestação dos serviços'} é de ${money(fixo)} mensais, referente aos serviços descritos no item 1.1.` });
     porFunc.forEach(i => v.push({ texto:`A soma dos produtos e serviços do item ${i.nome} é variável em função do número de funcionários no mês, multiplicado pelo valor unitário de ${money(i.valor)} mensais.` + (c.prolabore_sem_custo!==false ? ' Para a emissão de pró-labore não há custo adicional.' : '') + ((parseInt(i.qtd)||0)>0 ? ` Considerando o quadro atual de ${parseInt(i.qtd)} funcionário${parseInt(i.qtd)>1?'s':''}, o valor estimado é de ${money(r2(i.valor*parseInt(i.qtd)))} mensais.` : '') }));
     if(t.pontual>0) v.push(pagamentoPontualTxt(c, true, money(t.pontual), money));
-    if(c.adicional_anual) v.push({ texto:'A cada mês de novembro será cobrado um adicional anual correspondente ao valor de uma parcela mensal, para atendimento ao acréscimo de serviços e encargos próprios do período final do exercício, tais como elaboração das demonstrações contábeis anuais, elaboração e remessa das informações ao fisco federal, estadual e municipal, quando for o caso, informes de rendimento anual, SPED Contábil e SPED ECF, folha de pagamento do 13º salário e demais informativos. O valor deste adicional poderá ser parcelado em 12 (doze) vezes.' });
+    if(c.adicional_anual && (fixo>0 || porFunc.length)) v.push({ texto:'A cada mês de novembro será cobrado um adicional anual correspondente ao valor de uma parcela mensal, para atendimento ao acréscimo de serviços e encargos próprios do período final do exercício, tais como elaboração das demonstrações contábeis anuais, elaboração e remessa das informações ao fisco federal, estadual e municipal, quando for o caso, informes de rendimento anual, SPED Contábil e SPED ECF, folha de pagamento do 13º salário e demais informativos. O valor deste adicional poderá ser parcelado em 12 (doze) vezes.' });
   } else {
     v.push({ texto:`O valor dos honorários para os trabalhos previstos no item 1.1 é de ${money(t.pontual)}.` });
     v.push(pagamentoPontualTxt(c, false, '', money));
@@ -488,7 +490,7 @@ function clausulas(p, esc_){
     if(t.mensal>0) v.push({ texto:`Os serviços de natureza mensal descritos no item 1.1 somam ${money(t.mensal)} mensais.` });
   }
   v.push({ texto:'Todos os valores apresentados dizem respeito somente aos honorários profissionais. Não incluem nenhuma taxa, emolumento ou tributos pertinentes, sendo todos de responsabilidade da contratante.' });
-  if(p.modelo==='recorrente' || t.mensal>0){
+  if(fixo>0 || porFunc.length || t.mensal>0){
     v.push({ texto:`O vencimento dos honorários mensais é todo dia ${parseInt(c.dia_vencimento)||20} do mês subsequente a que se refere o serviço, mediante apresentação de nota fiscal e boleto bancário correspondente.` });
     if(c.revisao_bimestral) v.push({ texto:'A cada dois meses é feita a revisão no volume de lançamentos e funcionários, para adequação dos valores, o que significa que poderão aumentar, ou diminuir.' });
     v.push({ texto:`O valor dos honorários será reajustado sempre na data base de 1º de janeiro de cada ano, tendo como indexador o ${c.indice || 'IGP-M/FGV'} ou outro indicador oficial que venha a substituí-lo. A correção dar-se-á periodicamente a cada 12 (doze) meses, ou proporcional à data de assinatura do contrato de prestação de serviços contábeis, caso o período seja inferior.` });
@@ -534,6 +536,7 @@ function validarProposta(p){
   const t = totais(it);
   if(it.length && t.mensal + t.pontual + it.filter(i=>i.tipo==='por_funcionario').reduce((a,i)=>a+(+i.valor||0),0) <= 0) er.push('A proposta está com valor zero.');
   if(p.modelo==='pontual' && t.pontual<=0 && it.length) er.push('Proposta pontual precisa de pelo menos um serviço do tipo Pontual com valor.');
+  if(p.modelo==='recorrente' && it.length && !it.some(i => i.tipo==='mensal' || i.tipo==='por_funcionario')) er.push('Honorários mensais precisam de pelo menos um serviço Mensal ou Mensal por funcionário. Para cobrar só serviço pontual, escolha o modelo “Serviço pontual”.');
   const par = (p.condicoes||{}).parcelas||[], forma = formaPagamento(p.condicoes);
   if(t.pontual>0 && forma==='data' && !(p.condicoes||{}).vencimento_pontual) er.push('Informe a data de vencimento do valor pontual.');
   if(t.pontual>0 && forma==='parcelas' && !par.length) er.push('Forma de pagamento “Parcelado”: inclua as parcelas.');
@@ -642,10 +645,17 @@ function porSituacao(props){
 const CFG = { SUPABASE_URL:'https://yeujqjtjqtegsnzwwazb.supabase.co', SUPABASE_ANON_KEY:'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlldWpxanRqcXRlZ3Nuend3YXpiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1NDE0OTksImV4cCI6MjEwMTExNzQ5OX0.5p1_wJ_aApJpRrN6tFu8qmAytK5FMXWt1soCubpzqao' };
 const SUPABASE_JS = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js';
 
-const APP_VERSION = '1.9.1';
+const APP_VERSION = '1.9.2';
 const LOGO_EMAIL = 'https://arteconartescontabeis-design.github.io/propostas/logo_artecon.png';
 const PORTAL_URL = 'https://arteconartescontabeis-design.github.io/portal/';
 const CHANGELOG = [
+  { v:'1.9.2', data:'23/09/2026', itens:[
+    'Sair da prévia (“Ver documento sem salvar”) pelo menu lateral ou pelo Voltar do navegador agora pede confirmação quando há alterações não salvas.',
+    'Proposta de honorários mensais precisa ter pelo menos um serviço mensal. Sem isso, o documento trazia vencimento e reajuste de uma mensalidade que não existe. Para cobrar só serviço pontual, use o modelo Serviço pontual.',
+    'Documento: as cláusulas de vencimento, revisão bimestral, reajuste e adicional anual só entram quando a proposta tem honorário mensal.',
+    'Proposta sem honorário mensal com pagamento “Junto com o boleto mensal”: o formulário avisa e oferece trocar para “Em data de vencimento” com um clique (o texto padrão continua valendo para quem já é cliente mensal).',
+    'Celular: a faixa “o que falta agora” da proposta não espreme mais o texto; o botão desce para a linha de baixo, dentro da caixa.'
+  ]},
   { v:'1.9.1', data:'22/09/2026', itens:[
     'Mudar a situação na aba Andamento não dá mais erro: o cabeçalho e a tela da proposta passam a mostrar a nova situação na hora.',
     'Excluir pela tela da proposta volta para a lista (antes a proposta excluída continuava na tela).',
@@ -948,13 +958,13 @@ function rota(){
   const v = h.replace(/^#\//,''); ir(VIEWS[v] && v!=='form' && v!=='documento' ? v : 'painel');
 }
 window.addEventListener('hashchange', () => { if(S.modoCliente) return; if(/^#\/c\//.test(location.hash)){ location.reload(); return; } if(S.tenant && S.view!=='form') rota(); else if(S.tenant && S.view==='form' && S._hashInterno!==location.hash){ if(!formAlterado() || confirm('Sair do formulário? O que não foi salvo será perdido.')){ S._Fbase = null; S.F = null; rota(); } } });
-window.addEventListener('beforeunload', ev => { if(S.view==='form' && formAlterado()){ ev.preventDefault(); ev.returnValue = ''; } });
+window.addEventListener('beforeunload', ev => { if((S.view==='form' || (S.view==='documento' && S.docPrevia)) && formAlterado()){ ev.preventDefault(); ev.returnValue = ''; } });
 function formAlterado(){ return !!(S.F && S._Fbase && JSON.stringify(S.F) !== S._Fbase); }
 function ir(view){
-  if(S.view==='form' && view!=='form' && !(view==='documento' && S.docPrevia) && formAlterado()){
+  if((S.view==='form' || (S.view==='documento' && S.docPrevia)) && view!=='form' && !(view==='documento' && S.docPrevia) && formAlterado()){
     if(!confirm('Sair do formulário? O que não foi salvo será perdido.')){ document.querySelectorAll('.menu button').forEach(b => b.classList.toggle('ativo', b.dataset.ir==='propostas')); return; }
   }
-  if(view!=='form' && !(view==='documento' && S.docPrevia)){ S.F = null; S._Fbase = null; }
+  if(view!=='form' && !(view==='documento' && S.docPrevia)){ S.F = null; S._Fbase = null; S.docPrevia = null; }
   S.view = view; document.querySelectorAll('.menu button').forEach(b => b.classList.toggle('ativo', b.dataset.ir === (view==='form' || view==='documento' ? 'propostas' : view))); VIEWS[view](); window.scrollTo(0,0); const h = hashDe(S.view); if(h && location.hash !== h){ S._hashInterno = h; location.hash = h; } }
 function topo(titulo, sub, botoes){ return `<div class="topo"><div><h1>${esc(titulo)}</h1><p>${esc(sub)}</p></div><div class="acoes">${botoes || ''}</div></div>`; }
 
@@ -1539,6 +1549,7 @@ function desenhaCondicoes(){
       <div class="campo"><label for="c_forma">Forma de pagamento do valor pontual</label><select id="c_forma" data-c="pagamento_pontual">${Object.keys(FORMAS_PGTO).map(k => `<option value="${k}" ${forma===k?'selected':''}>${esc(FORMAS_PGTO[k])}${k==='boleto_mensal' ? ' (padrão)' : ''}</option>`).join('')}</select></div>
       ${forma==='boleto_mensal' || forma==='data' ? `<div class="campo c1"><label for="c_venc">Data de vencimento${forma==='data' ? ' *' : ''}</label><input type="date" id="c_venc" data-c="vencimento_pontual" value="${esc(c.vencimento_pontual||'')}"></div>` : ''}
       <div class="campo ${forma==='parcelas' ? '' : 'c1'}" style="align-self:end"><span class="dica">${forma==='boleto_mensal' ? 'Sai no boleto dos honorários. A data é opcional.' : forma==='data' ? 'Boleto próprio, com nota fiscal.' : forma==='parcelas' ? 'Cada parcela pode ter data de vencimento e uma condição.' : 'Pago quando o cliente aceitar.'}</span></div></div>
+    ${forma==='boleto_mensal' && !F.itens.some(i => i.tipo!=='pontual') ? `<div class="aviso ambar" style="margin-top:10px"><span>Esta proposta não tem honorário mensal, e o documento dirá que o valor será cobrado <b>junto com o boleto dos honorários mensais</b>. Se o cliente não tem boleto mensal com o escritório, use “Em data de vencimento”.</span><button class="btn mini" data-act="usarData">Usar data de vencimento</button></div>` : ''}
     ${forma==='parcelas' ? `<div id="parcelas" style="margin-top:10px">${c.parcelas.map((x,i) => `<div class="parcela"><input type="text" inputmode="decimal" data-p="${i}" data-k="valor" value="${x.valor ? num2(x.valor) : ''}" placeholder="Valor" aria-label="Valor da parcela ${i+1}"><input type="date" data-p="${i}" data-k="data" value="${esc(x.data||'')}" aria-label="Vencimento da parcela ${i+1}"><input type="text" data-p="${i}" data-k="descricao" value="${esc(x.descricao||'')}" placeholder="Condição: juntamente com o boleto mensal; na entrega do parecer…" aria-label="Condição da parcela ${i+1}"><button type="button" class="x" style="border:0;background:none;color:var(--vermelho);font-size:20px;cursor:pointer" data-act="delParcela" data-i="${i}" aria-label="Remover parcela">×</button></div>`).join('')}</div>
       <div class="filtros" style="align-items:center"><button class="btn mini" data-act="addParcela">Adicionar parcela</button><button class="btn mini" data-act="dividirBoletos">Dividir em</button><input type="number" id="c_nbol" min="2" max="12" value="${Math.min(12, Math.max(2, c.parcelas.length || 3))}" style="width:64px;flex:none;min-width:0" aria-label="Número de boletos mensais"><span>boletos mensais</span><button class="btn mini" data-act="meioMeio">50% na aceitação e 50% na entrega</button><span id="somaParcelas" class="dica"></span></div>` : ''}
       <div class="grade"><div class="campo c1"><label for="c_prazo">Prazo de execução (dias)</label><input type="number" id="c_prazo" min="0" data-c="prazo_dias" value="${esc(c.prazo_dias||'')}"></div><div class="campo" style="grid-column:span 3"><label for="c_marco">Contagem do prazo</label><input type="text" id="c_marco" data-c="prazo_marco" value="${esc(c.prazo_marco||'')}"></div></div>`;
@@ -1793,6 +1804,7 @@ const ACOES = {
   salvarProposta(){ salvarProposta(); },
   addItem(){ S.F.itens.push({ nome:'', descricao:'', tipo:S.F.modelo==='pontual' ? 'pontual' : 'mensal', valor:0, qtd:0 }); desenhaItens(); desenhaCondicoes(); },
   delItem(el){ S.F.itens.splice(+el.dataset.i, 1); desenhaItens(); desenhaCondicoes(); },
+  usarData(){ S.F.condicoes.pagamento_pontual = 'data'; desenhaCondicoes(); const v = $('c_venc'); if(v) v.focus(); },
   addParcela(){ S.F.condicoes.parcelas.push({ valor:0, data:'', descricao:'' }); desenhaCondicoes(); },
   dividirBoletos(){ const F = S.F, t = totais(F.itens).pontual, n = Math.min(12, Math.max(2, parseInt($('c_nbol').value) || 3)); if(!t){ toast('Informe antes o valor do serviço pontual.', true); return; }
     const base = r2(Math.floor(t / n * 100) / 100), dia = Math.min(28, parseInt(F.condicoes.dia_vencimento) || 20), [y, m] = (F.data_proposta || hojeISO()).split('-').map(Number);
